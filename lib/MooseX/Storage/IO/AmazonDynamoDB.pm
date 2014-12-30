@@ -48,6 +48,16 @@ parameter ssl => (
     default => 1,
 );
 
+parameter table_name => (
+    isa     => 'Maybe[Str]',
+    default => undef,
+);
+
+parameter table_name_method => (
+    isa     => 'Str',
+    default => 'dynamo_db_table_name',
+);
+
 role {
     my $p = shift;
 
@@ -88,11 +98,21 @@ role {
         };
     };
 
+    my $get_table_name = sub {
+        my $ref = shift;
+        return $p->table_name if $p->table_name;
+        if (my $method = $p->table_name_method) {
+            return $ref->$method;
+        }
+        my $class = ref $ref || $ref;
+        die "$class: no table name defined!";
+    };
+
     method load_async => sub {
         my ( $class, %args ) = @_;
         my $client = $args{dynamo_db_client} || $build_client->($class);
+        my $table_name = $get_table_name->($class);
 
-        # TBD: validate table_name, or get from class
         # TBD: validate key
         # TBD: handle failures
 
@@ -117,7 +137,7 @@ role {
 
         return $client->get_item(
             $unpacker,
-            TableName => $args{table_name},
+            TableName => $table_name,
             Key       => $args{key},
         );
     };
@@ -131,8 +151,8 @@ role {
     method store_async => sub {
         my ( $self, %args ) = @_;
         my $client = $args{dynamo_db_client} || $self->$client_attr;
+        my $table_name = $get_table_name->($self);
 
-        # TBD: validate table_name, or get from obj/class.
         # TBD: validate key, or get from obj
         # TBD: handle failures
 
@@ -147,7 +167,7 @@ role {
         }
 
         return $client->put_item(
-            TableName => $args{table_name},
+            TableName => $table_name,
             Item => {
                 %{ $args{key} },
                 %$packed,

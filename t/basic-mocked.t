@@ -12,6 +12,8 @@ $ENV{AWS_ACCESS_KEY_ID} = 'ABABABABABABABABABAB';
 $ENV{AWS_SECRET_ACCESS_KEY} = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
 $ENV{AWS_DEFAULT_REGION} = 'us-east-1';
 
+my $table_name = 'moosex-storage-io-amazondynamodb-'.time;
+
 {
     package MyDoc;
     use Moose;
@@ -19,6 +21,7 @@ $ENV{AWS_DEFAULT_REGION} = 'us-east-1';
 
     with Storage(io => [ 'AmazonDynamoDB' => {
         client_class => 'TestDynamoDB',
+        table_name   => $table_name,
     }]);
 
     has 'title'   => (is => 'rw', isa => 'Str');
@@ -26,8 +29,6 @@ $ENV{AWS_DEFAULT_REGION} = 'us-east-1';
     has 'tags'    => (is => 'rw', isa => 'ArrayRef');
     has 'authors' => (is => 'rw', isa => 'HashRef');
 }
-
-my $table_name = 'moosex-storage-io-amazondynamodb-'.time;
 
 TestDynamoDB->create_table(
     table_name => $table_name,
@@ -55,14 +56,12 @@ my $doc = MyDoc->new(
 my $key = 'a-unique-key';
 
 $doc->store(
-    table_name => $table_name,
     key        => {
         mykey => $key
     },
 );
 
 my $doc2 = MyDoc->load(
-    table_name => $table_name,
     key        => {
         mykey => $key
     },

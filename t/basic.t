@@ -10,12 +10,16 @@ use AWS::CLI::Config;
 # BE AWARE THIS WILL COST YOU MONEY EVERY TIME IT RUNS.
 #
 
+my $table_name = 'moosex-storage-io-amazondynamodb-'.time;
+
 {
     package MyDoc;
     use Moose;
     use MooseX::Storage;
 
-    with Storage(io => 'AmazonDynamoDB');
+    with Storage(io => [ 'AmazonDynamoDB' => {
+        table_name => $table_name,
+    }]);
 
     has 'title'   => (is => 'rw', isa => 'Str');
     has 'body'    => (is => 'rw', isa => 'Str');
@@ -27,8 +31,6 @@ SKIP: {
     skip 'RUN_DYNAMODB_TESTS envar not set, '
         . 'skipping tests against real DynamoDB server', 1
         if !$ENV{RUN_DYNAMODB_TESTS};
-
-    my $table_name = 'moosex-storage-io-amazondynamodb-'.time;
 
     setup($table_name);
 
@@ -53,14 +55,12 @@ SKIP: {
     my $key = 'a-unique-key';
 
     $doc->store(
-        table_name => $table_name,
         key        => {
             mykey => $key
         },
     );
 
     my $doc2 = MyDoc->load(
-        table_name => $table_name,
         key        => {
             mykey => $key
         },

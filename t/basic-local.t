@@ -14,6 +14,8 @@ $ENV{AWS_ACCESS_KEY_ID} = 'ABABABABABABABABABAB';
 $ENV{AWS_SECRET_ACCESS_KEY} = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
 $ENV{AWS_DEFAULT_REGION} = 'us-east-1';
 
+my $table_name = 'moosex-storage-io-amazondynamodb-'.time;
+
 {
     package MyDoc;
     use Moose;
@@ -23,6 +25,7 @@ $ENV{AWS_DEFAULT_REGION} = 'us-east-1';
         host       => 'localhost',
         port       => '8000',
         ssl        => 0,
+        table_name => $table_name,
     }]);
 
     has 'title'   => (is => 'rw', isa => 'Str');
@@ -35,8 +38,6 @@ SKIP: {
     skip 'RUN_DYNAMODB_LOCAL_TESTS envar not set, '
         . 'skipping tests against local DynamoDB server', 1
         if !$ENV{RUN_DYNAMODB_LOCAL_TESTS};
-
-    my $table_name = 'moosex-storage-io-amazondynamodb-'.time;
 
     setup($table_name);
 
@@ -61,14 +62,12 @@ SKIP: {
     my $key = 'a-unique-key';
 
     $doc->store(
-        table_name => $table_name,
         key        => {
             mykey => $key
         },
     );
 
     my $doc2 = MyDoc->load(
-        table_name => $table_name,
         key        => {
             mykey => $key
         },
