@@ -2,6 +2,8 @@ requires 'perl', '5.014';
 
 requires 'AWS::CLI::Config';
 requires 'Amazon::DynamoDB';
+requires 'IO::Socket::SSL';
+requires 'JSON::MaybeXS';
 requires 'Module::Runtime';
 requires 'Moose';
 requires 'MooseX::Role::Parameterized';
@@ -14,5 +16,5 @@ on test => sub {
     requires 'Future';
     requires 'Kavorka';
     requires 'MooseX::ClassAttribute';
-    requires 'Test::More', '0.96';
+    requires 'Test::Most';
 };

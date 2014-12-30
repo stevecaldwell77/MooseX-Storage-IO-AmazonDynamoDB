@@ -6,6 +6,7 @@ our $VERSION = '0.01';
 
 use Amazon::DynamoDB;
 use AWS::CLI::Config;
+use JSON::MaybeXS;
 use Module::Runtime qw(use_module);
 use MooseX::Role::Parameterized;
 use MooseX::Storage;
@@ -32,6 +33,21 @@ parameter client_args_method => (
     default => 'dynamo_db_client_args',
 );
 
+parameter dynamo_db_host => (
+    isa     => 'Maybe[Str]',
+    default => undef,
+);
+
+parameter dynamo_db_port => (
+    isa     => 'Maybe[Int]',
+    default => undef,
+);
+
+parameter dynamo_db_ssl => (
+    isa     => 'Bool',
+    default => 1,
+);
+
 role {
     my $p = shift;
 
@@ -45,6 +61,7 @@ role {
     my $build_client = sub {
         my $ref = shift;
         my $client_class = $ref->$client_class_method();
+        use_module($client_class);
         my $client_args  = $ref->$client_args_method();
         return $client_class->new(%$client_args);
     };
@@ -61,11 +78,13 @@ role {
 
     method $client_args_method => sub {
         my $region = AWS::CLI::Config::region;
+        my $host = $p->dynamo_db_host || "dynamodb.$region.amazonaws.com";
         return {
             access_key => AWS::CLI::Config::access_key_id,
             secret_key => AWS::CLI::Config::secret_access_key,
-            host       => "dynamodb.$region.amazonaws.com",
-            ssl        => 1,
+            host       => $host,
+            port       => $p->dynamo_db_port,
+            ssl        => $p->dynamo_db_ssl,
         };
     };
 
@@ -77,14 +96,27 @@ role {
         # TBD: validate key
         # TBD: handle failures
 
+        my $unpacker = sub {
+            my $packed = shift;
+
+            # Refs are stored as JSON
+            foreach my $key (%$packed) {
+                my $value = $packed->{$key};
+                if ($value && $value =~ /^\$json\$v(\d+)\$:(.+)$/) {
+                    my ($version, $json) = ($1, $2);
+                    state $coder = JSON::MaybeXS->new(utf8=>1);
+                    $packed->{$key} = $coder->decode($json);
+                }
+            }
+
+            return $class->unpack({
+                %$packed,
+                %{ $args{inject} || {} },
+            });
+        };
+
         my $get = $client->get_item(
-            sub {
-                my $data = shift;
-                return $class->unpack({
-                    %$data,
-                    %{ $args{inject} || {} },
-                });
-            },
+            $unpacker,
             TableName => $args{table_name},
             Key       => $args{key},
         );
@@ -99,11 +131,21 @@ role {
         # TBD: validate key, or get from obj
         # TBD: handle failures
 
+        # Store refs as JSON
+        my $packed = $self->pack;
+        foreach my $key (%$packed) {
+            my $value = $packed->{$key};
+            if (ref $value) {
+                state $coder = JSON::MaybeXS->new(utf8=>1, canonical=>1);
+                $packed->{$key} = '$json$v1$:'.$coder->encode($value);
+            }
+        }
+
         my $put = $client->put_item(
             TableName => $args{table_name},
             Item => {
                 %{ $args{key} },
-                %{ $self->pack },
+                %$packed,
             },
         );
         return $put->get();

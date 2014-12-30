@@ -5,17 +5,25 @@ use Test::Most;
 use AWS::CLI::Config;
 
 #
-# This runs a basic set of tests, running against a real DynamoDB server.
-# It will only be run if the RUN_DYNAMODB_TESTS envar is set.
-# BE AWARE THIS WILL COST YOU MONEY EVERY TIME IT RUNS.
+# This runs a basic set of tests, running against a local DynamoDB server.
+# It will only be run if the RUN_DYNAMODB_LOCAL_TESTS envar is set.
+# See http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Tools.DynamoDBLocal.html for information on how to run the local DynamoDB.
 #
+
+$ENV{AWS_ACCESS_KEY_ID} = 'ABABABABABABABABABAB';
+$ENV{AWS_SECRET_ACCESS_KEY} = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
+$ENV{AWS_DEFAULT_REGION} = 'us-east-1';
 
 {
     package MyDoc;
     use Moose;
     use MooseX::Storage;
 
-    with Storage(io => 'AmazonDynamoDB');
+    with Storage(io => [ 'AmazonDynamoDB' => {
+        dynamo_db_host => 'localhost',
+        dynamo_db_port => '8000',
+        dynamo_db_ssl  => 0,
+    }]);
 
     has 'title'   => (is => 'rw', isa => 'Str');
     has 'body'    => (is => 'rw', isa => 'Str');
@@ -24,9 +32,9 @@ use AWS::CLI::Config;
 }
 
 SKIP: {
-    skip 'RUN_DYNAMODB_TESTS envar not set, '
-        . 'skipping tests against real DynamoDB server', 1
-        if !$ENV{RUN_DYNAMODB_TESTS};
+    skip 'RUN_DYNAMODB_LOCAL_TESTS envar not set, '
+        . 'skipping tests against local DynamoDB server', 1
+        if !$ENV{RUN_DYNAMODB_LOCAL_TESTS};
 
     my $table_name = 'moosex-storage-io-amazondynamodb-'.time;
 
@@ -129,7 +137,8 @@ sub client {
     return Amazon::DynamoDB->new(
         access_key => AWS::CLI::Config::access_key_id,
         secret_key => AWS::CLI::Config::secret_access_key,
-        host       => "dynamodb.$region.amazonaws.com",
-        ssl        => 1,
+        host       => 'localhost',
+        port       => '8000',
+        ssl        => 0,
     );
 }
