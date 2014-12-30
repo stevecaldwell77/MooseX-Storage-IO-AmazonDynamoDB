@@ -88,7 +88,7 @@ role {
         };
     };
 
-    method load => sub {
+    method load_async => sub {
         my ( $class, %args ) = @_;
         my $client = $args{dynamo_db_client} || $build_client->($class);
 
@@ -115,15 +115,20 @@ role {
             });
         };
 
-        my $get = $client->get_item(
+        return $client->get_item(
             $unpacker,
             TableName => $args{table_name},
             Key       => $args{key},
         );
-        return $get->get();
     };
 
-    method store => sub {
+    method load => sub {
+        my ( $class, %args ) = @_;
+        my $future = $class->load_async(%args);
+        return $future->get();
+    };
+
+    method store_async => sub {
         my ( $self, %args ) = @_;
         my $client = $args{dynamo_db_client} || $self->$client_attr;
 
@@ -141,14 +146,19 @@ role {
             }
         }
 
-        my $put = $client->put_item(
+        return $client->put_item(
             TableName => $args{table_name},
             Item => {
                 %{ $args{key} },
                 %$packed,
             },
         );
-        return $put->get();
+    };
+
+    method store => sub {
+        my ( $self, %args ) = @_;
+        my $future = $self->store_async(%args);
+        return $future->get();
     };
 };
 
