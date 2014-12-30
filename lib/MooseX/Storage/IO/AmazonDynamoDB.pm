@@ -13,6 +13,21 @@ use MooseX::Storage;
 use Types::Standard qw(Str HashRef HasMethods);
 use namespace::autoclean;
 
+parameter key_attr => (
+    isa      => 'Str',
+    required => 1,
+);
+
+parameter table_name => (
+    isa     => 'Maybe[Str]',
+    default => undef,
+);
+
+parameter table_name_method => (
+    isa     => 'Str',
+    default => 'dynamo_db_table_name',
+);
+
 parameter client_attr => (
     isa     => 'Str',
     default => 'dynamo_db_client',
@@ -46,16 +61,6 @@ parameter port => (
 parameter ssl => (
     isa     => 'Bool',
     default => 1,
-);
-
-parameter table_name => (
-    isa     => 'Maybe[Str]',
-    default => undef,
-);
-
-parameter table_name_method => (
-    isa     => 'Str',
-    default => 'dynamo_db_table_name',
 );
 
 role {
@@ -109,11 +114,10 @@ role {
     };
 
     method load_async => sub {
-        my ( $class, %args ) = @_;
+        my ( $class, $item_key, %args ) = @_;
         my $client = $args{dynamo_db_client} || $build_client->($class);
         my $table_name = $get_table_name->($class);
 
-        # TBD: validate key
         # TBD: handle failures
 
         my $unpacker = sub {
@@ -138,13 +142,15 @@ role {
         return $client->get_item(
             $unpacker,
             TableName => $table_name,
-            Key       => $args{key},
+            Key       => {
+                $p->key_attr => $item_key,
+            }
         );
     };
 
     method load => sub {
-        my ( $class, %args ) = @_;
-        my $future = $class->load_async(%args);
+        my $class = shift;
+        my $future = $class->load_async(@_);
         return $future->get();
     };
 
@@ -168,16 +174,13 @@ role {
 
         return $client->put_item(
             TableName => $table_name,
-            Item => {
-                %{ $args{key} },
-                %$packed,
-            },
+            Item      => $packed,
         );
     };
 
     method store => sub {
-        my ( $self, %args ) = @_;
-        my $future = $self->store_async(%args);
+        my $self = shift;
+        my $future = $self->store_async(@_);
         return $future->get();
     };
 };

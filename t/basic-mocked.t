@@ -22,8 +22,10 @@ my $table_name = 'moosex-storage-io-amazondynamodb-'.time;
     with Storage(io => [ 'AmazonDynamoDB' => {
         client_class => 'TestDynamoDB',
         table_name   => $table_name,
+        key_attr     => 'doc_id',
     }]);
 
+    has 'doc_id'  => (is => 'ro', isa => 'Str', required => 1);
     has 'title'   => (is => 'rw', isa => 'Str');
     has 'body'    => (is => 'rw', isa => 'Str');
     has 'tags'    => (is => 'rw', isa => 'ArrayRef');
@@ -32,10 +34,11 @@ my $table_name = 'moosex-storage-io-amazondynamodb-'.time;
 
 TestDynamoDB->create_table(
     table_name => $table_name,
-    key_name   => 'mykey',
+    key_name   => 'doc_id',
 );
 
 my $doc = MyDoc->new(
+    doc_id   => 'foo12',
     title    => 'Foo',
     body     => 'blah blah',
     tags     => [qw(horse yellow angry)],
@@ -53,25 +56,16 @@ my $doc = MyDoc->new(
     },
 );
 
-my $key = 'a-unique-key';
+$doc->store();
 
-$doc->store(
-    key        => {
-        mykey => $key
-    },
-);
-
-my $doc2 = MyDoc->load(
-    key        => {
-        mykey => $key
-    },
-);
+my $doc2 = MyDoc->load('foo12');
 
 cmp_deeply(
     $doc2,
     all(
         isa('MyDoc'),
         methods(
+            doc_id   => 'foo12',
             title    => 'Foo',
             body     => 'blah blah',
             tags     => [qw(horse yellow angry)],
