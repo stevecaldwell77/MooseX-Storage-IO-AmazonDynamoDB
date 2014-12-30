@@ -4,14 +4,18 @@ use Test::More;
 
 use TestDynamoDB;
 
+$ENV{AWS_ACCESS_KEY_ID} = 'ABABABABABABABABABAB';
+$ENV{AWS_SECRET_ACCESS_KEY} = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
+$ENV{AWS_DEFAULT_REGION} = 'us-east-1';
+
 {
     package MyDoc;
     use Moose;
     use MooseX::Storage;
 
     with Storage(io => [ 'AmazonDynamoDB' => {
-        dynamo_db_client_class => 'TestDynamoDB',
-    } ]);
+        client_class => 'TestDynamoDB',
+    }]);
 
     has 'title' => (is => 'rw', isa => 'Str');
     has 'body'  => (is => 'rw', isa => 'Str');
@@ -31,24 +35,12 @@ $doc->store(
     key        => {
         mykey => $key
     },
-    dynamo_db  => {
-        access_key => 'ABABABABABABABABABAB',
-        secret_key => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-        host       => 'dynamodb.us-east-1.amazonaws.com',
-        ssl        => 1,
-    },
 );
 
 my $doc2 = MyDoc->load(
     table_name => 'mydoc',
     key        => {
         mykey => $key
-    },
-    dynamo_db  => {
-        access_key => 'ABABABABABABABABABAB',
-        secret_key => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-        host       => 'dynamodb.us-east-1.amazonaws.com',
-        ssl        => 1,
     },
 );
 
