@@ -33,17 +33,17 @@ parameter client_args_method => (
     default => 'dynamo_db_client_args',
 );
 
-parameter dynamo_db_host => (
+parameter host => (
     isa     => 'Maybe[Str]',
     default => undef,
 );
 
-parameter dynamo_db_port => (
+parameter port => (
     isa     => 'Maybe[Int]',
     default => undef,
 );
 
-parameter dynamo_db_ssl => (
+parameter ssl => (
     isa     => 'Bool',
     default => 1,
 );
@@ -78,13 +78,13 @@ role {
 
     method $client_args_method => sub {
         my $region = AWS::CLI::Config::region;
-        my $host = $p->dynamo_db_host || "dynamodb.$region.amazonaws.com";
+        my $host = $p->host || "dynamodb.$region.amazonaws.com";
         return {
             access_key => AWS::CLI::Config::access_key_id,
             secret_key => AWS::CLI::Config::secret_access_key,
             host       => $host,
-            port       => $p->dynamo_db_port,
-            ssl        => $p->dynamo_db_ssl,
+            port       => $p->port,
+            ssl        => $p->ssl,
         };
     };
 

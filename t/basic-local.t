@@ -20,9 +20,9 @@ $ENV{AWS_DEFAULT_REGION} = 'us-east-1';
     use MooseX::Storage;
 
     with Storage(io => [ 'AmazonDynamoDB' => {
-        dynamo_db_host => 'localhost',
-        dynamo_db_port => '8000',
-        dynamo_db_ssl  => 0,
+        host       => 'localhost',
+        port       => '8000',
+        ssl        => 0,
     }]);
 
     has 'title'   => (is => 'rw', isa => 'Str');
