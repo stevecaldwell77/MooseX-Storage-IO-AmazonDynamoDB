@@ -113,9 +113,11 @@ role {
         die "$class: no table name defined!";
     };
 
-    method load_async => sub {
+    method load => sub {
         my ( $class, $item_key, %args ) = @_;
         my $client = $args{dynamo_db_client} || $build_client->($class);
+        my $async  = $args{async}            || 0;
+        my $inject = $args{inject}           || {};
         my $table_name = $get_table_name->($class);
 
         # TBD: handle failures
@@ -135,28 +137,29 @@ role {
 
             return $class->unpack({
                 %$packed,
-                %{ $args{inject} || {} },
+                %$inject,
             });
         };
 
-        return $client->get_item(
+        my $future = $client->get_item(
             $unpacker,
             TableName => $table_name,
             Key       => {
                 $p->key_attr => $item_key,
             }
         );
-    };
 
-    method load => sub {
-        my $class = shift;
-        my $future = $class->load_async(@_);
+        if ($async) {
+            return $future;
+        }
+
         return $future->get();
     };
 
-    method store_async => sub {
+    method store => sub {
         my ( $self, %args ) = @_;
         my $client = $args{dynamo_db_client} || $self->$client_attr;
+        my $async  = $args{async}            || 0;
         my $table_name = $get_table_name->($self);
 
         # TBD: validate key, or get from obj
@@ -172,15 +175,15 @@ role {
             }
         }
 
-        return $client->put_item(
+        my $future = $client->put_item(
             TableName => $table_name,
             Item      => $packed,
         );
-    };
 
-    method store => sub {
-        my $self = shift;
-        my $future = $self->store_async(@_);
+        if ($async) {
+            return $future;
+        }
+
         return $future->get();
     };
 };
