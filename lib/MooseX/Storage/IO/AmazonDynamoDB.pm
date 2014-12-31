@@ -168,7 +168,6 @@ role {
         my $async  = $args{async}            || 0;
         my $table_name = $get_table_name->($self);
 
-        # TBD: validate key, or get from obj
         # TBD: handle failures
 
         # Store refs as JSON
