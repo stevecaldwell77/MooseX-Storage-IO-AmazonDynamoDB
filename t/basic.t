@@ -2,8 +2,6 @@ use lib 'tlib';
 use strict;
 use Test::Most;
 
-use AWS::CLI::Config;
-
 #
 # This runs a basic set of tests, running against a real DynamoDB server.
 # It will only be run if the RUN_DYNAMODB_TESTS envar is set.
