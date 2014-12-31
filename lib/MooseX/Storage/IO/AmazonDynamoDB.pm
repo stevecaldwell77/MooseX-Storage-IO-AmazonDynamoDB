@@ -63,6 +63,11 @@ parameter ssl => (
     default => 1,
 );
 
+parameter create_table_method => (
+    isa     => 'Str',
+    default => 'dynamo_db_create_table',
+);
+
 role {
     my $p = shift;
 
@@ -186,6 +191,28 @@ role {
         }
 
         return $future->get();
+    };
+
+    method $p->create_table_method => sub {
+        my ( $class, %args ) = @_;
+        my $client = delete $args{dynamo_db_client}
+                     || $build_client->($class);
+
+        my $table_name = $get_table_name->($class);
+        my $key_name   = $p->key_attr;
+
+        $client->create_table(
+            TableName            => $table_name,
+            AttributeDefinitions => {
+                $key_name => 'S',
+            },
+            KeySchema            => [$key_name],
+            ReadCapacityUnits    => 2,
+            WriteCapacityUnits   => 2,
+            %args,
+        )->get();
+
+        $client->wait_for_table_status(TableName => $table_name);
     };
 };
 

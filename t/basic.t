@@ -34,7 +34,7 @@ SKIP: {
         . 'skipping tests against real DynamoDB server', 1
         if !$ENV{RUN_DYNAMODB_TESTS};
 
-    setup($table_name);
+    MyDoc->dynamo_db_create_table();
 
     my $doc = MyDoc->new(
         doc_id   => 'foo12',
@@ -85,45 +85,7 @@ SKIP: {
         'retrieved document looks good',
     );
 
-    teardown($table_name);
+    $doc2->dynamo_db_client->delete_table(TableName => $table_name);
 }
 
 done_testing;
-
-sub setup {
-    my ($table_name) = @_;
-
-    my $client = client();
-
-    $client->create_table(
-        TableName            => $table_name,
-        AttributeDefinitions => {
-            doc_id => 'S',
-        },
-        KeySchema            => ['doc_id'],
-        ReadCapacityUnits    => 2,
-        WriteCapacityUnits   => 2,
-    )->get();
-
-    $client->wait_for_table_status(TableName => $table_name);
-}
-
-sub teardown {
-    my ($table_name) = @_;
-
-    my $client = client();
-
-    $client->delete_table(
-        TableName => $table_name,
-    );
-}
-
-sub client {
-    my $region = AWS::CLI::Config::region;
-    return Amazon::DynamoDB->new(
-        access_key => AWS::CLI::Config::access_key_id,
-        secret_key => AWS::CLI::Config::secret_access_key,
-        host       => "dynamodb.$region.amazonaws.com",
-        ssl        => 1,
-    );
-}
