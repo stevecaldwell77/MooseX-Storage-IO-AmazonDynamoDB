@@ -138,6 +138,7 @@ role {
             return $class->unpack({
                 %$packed,
                 %$inject,
+                $client_attr => $client,
             });
         };
 
