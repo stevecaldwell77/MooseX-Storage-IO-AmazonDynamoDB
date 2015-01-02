@@ -26,9 +26,7 @@
    "prereqs" : {
       "build" : {
          "requires" : {
-            "Dist::Milla" : "0",
-            "Pod::Elemental::Transformer::List" : "0",
-            "Pod::Weaver" : "0"
+            "Dist::Milla" : "0"
          }
       },
       "configure" : {

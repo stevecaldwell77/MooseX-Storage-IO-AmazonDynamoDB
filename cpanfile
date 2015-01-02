@@ -21,6 +21,4 @@ on test => sub {
 
 on build => sub {
     requires 'Dist::Milla';
-    requires 'Pod::Weaver';
-    requires 'Pod::Elemental::Transformer::List';
 };

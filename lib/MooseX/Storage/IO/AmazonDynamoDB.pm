@@ -1,5 +1,4 @@
 package MooseX::Storage::IO::AmazonDynamoDB;
-# ABSTRACT: Save Moose objects to AWS's DynamoDB, via MooseX::Storage.
 
 use strict;
 use 5.014;
@@ -216,6 +215,10 @@ __END__
 
 =encoding utf-8
 
+=head1 NAME
+
+MooseX::Storage::IO::AmazonDynamoDB - Save Moose objects to AWS's DynamoDB, via MooseX::Storage.
+
 =head1 SYNOPSIS
 
 First, configure your Moose class via a call to Storage:
@@ -278,7 +281,7 @@ Now you can store/load your class to DyanmoDB:
 
 MooseX::Storage::IO::AmazonDynamoDB is a Moose role that provides an io layer for L<MooseX::Storage> to store/load your Moose objects to Amazon's DynamoDB NoSQL database service.
 
-You should understand the basics of both L<MooseX::Storage> and L<DynamoDB|http://aws.amazon.com/dynamodb/> before using this module.
+You should understand the basics of L<Moose>, L<MooseX::Storage>, and L<DynamoDB|http://aws.amazon.com/dynamodb/> before using this module.
 
 This module uses L<Amazon::DynamoDB> as its client library to the DynamoDB service.
 
@@ -338,27 +341,37 @@ Following are methods that will be added to your consuming class.
 
 =head2 $obj->store([ dynamo_db_client => $client ][, async => 1])
 
-Object method.  Store the packed Moose object to DynamoDb.  Accepts 2 optional parameters:
+Object method.  Stores the packed Moose object to DynamoDb.  Accepts 2 optional parameters:
 
-=for :list
-* dynamo_db_client - Directly provide a Amazon::DynamoDB object, instead of using the dynamo_db_client attribute.
-* async - Don't wait for the operation to complete, return a Future object instead.
+=over 4
+
+=item dynamo_db_client - Directly provide a Amazon::DynamoDB object, instead of using the dynamo_db_client attribute.
+
+=item async - Don't wait for the operation to complete, return a Future object instead.
+
+=back
 
 =head2 $obj = $class->load($key, [, dynamo_db_client => $client ][, inject = { key => val, ... } ])
 
-Class method.  Query DynamoDB with a primary key, and return a new Moose object built from the resulting data.
+Class method.  Queries DynamoDB with a primary key, and returns a new Moose object built from the resulting data.
 
 The first argument is the primary key to use, and is required.
 
 Optional parameters can be specified following the key:
 
-=for :list
-* dynamo_db_client - Directly provide a Amazon::DynamoDB object, instead of trying to build one using the class' configuration.
-* inject - supply additional arguments to the class' new function, or override ones from the serialized data.
+=over 4
+
+=item dynamo_db_client - Directly provide a Amazon::DynamoDB object, instead of trying to build one using the class' configuration.
+
+=item inject - supply additional arguments to the class' new function, or override ones from the resulting data.
+
+=back
 
 =head2 $class->dynamo_db_create_table([, dynamo_db_client => $client ][ ReadCapacityUnits => X, ... ])
 
 Class method.  Wrapper for L<Amazon::DynamoDB>'s create_table method, with the table name and key already setup.
+
+Takes in dynamo_db_client as an optional parameter, all other parameters are passed to Amazon::DynamoDB.
 
 =head2 $client_class = $class->dynamo_db_client_class()
 
@@ -401,15 +414,15 @@ You can also change the actual method name via the L<"table_name_method"> parame
 
 Note that this role does not need you to implement a 'format' level for your object, i.e freeze/thaw.  You can add one if you want it for other purposes.
 
-=head2 how references are stored
+=head2 How references are stored
 
-When communicating with the AWS serice, the Amazon::DynamoDB code is not handling arrayrefs correctly (they can be returned out-of-order) or hashrefs at all.  I've added a simple JSON level when encountering references - it should work seamlessly in your Perl code, but if you look up the data directly in DynamoDB you'll see complex data structures stored as JSON strings.
+When communicating with the AWS service, the Amazon::DynamoDB code is not handling arrayrefs correctly (they can be returned out-of-order) or hashrefs at all.  I've added a simple JSON level when encountering references - it should work seamlessly in your Perl code, but if you look up the data directly in DynamoDB you'll see complex data structures stored as JSON strings.
 
 I'm hoping to get this fixed.
 
 =head1 BUGS
 
-See L<"how references are stored">.
+See L<"How references are stored">.
 
 =head1 AUTHOR
 
@@ -417,7 +430,7 @@ Steve Caldwell E<lt>scaldwell@gmail.comE<gt>
 
 =head1 COPYRIGHT
 
-Copyright 2015- Steve Caldwell
+Copyright 2015- Steve Caldwell E<lt>scaldwell@gmail.comE<gt>
 
 =head1 LICENSE
 
@@ -426,9 +439,18 @@ it under the same terms as Perl itself.
 
 =head1 SEE ALSO
 
-=for :list
-* L<MooseX::Storage>
-* L<Amazon's DynamoDB Homepage|http://aws.amazon.com/dynamodb/>
-* L<Amazon::DynamoDB> - Perl DynamoDB client.
-* L<AWS::CLI::Config> - how configuration is done by default.
+=over 4
+
+=item L<Moose>
+
+=item L<MooseX::Storage>
+
+=item L<Amazon's DynamoDB Homepage|http://aws.amazon.com/dynamodb/>
+
+=item L<Amazon::DynamoDB> - Perl DynamoDB client.
+
+=item L<AWS::CLI::Config> - how configuration is done by default.
+
+=back
+
 =cut

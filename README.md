@@ -2,10 +2,6 @@
 
 MooseX::Storage::IO::AmazonDynamoDB - Save Moose objects to AWS's DynamoDB, via MooseX::Storage.
 
-# VERSION
-
-version 0.01
-
 # SYNOPSIS
 
 First, configure your Moose class via a call to Storage:
@@ -68,7 +64,7 @@ Now you can store/load your class to DyanmoDB:
 
 MooseX::Storage::IO::AmazonDynamoDB is a Moose role that provides an io layer for [MooseX::Storage](https://metacpan.org/pod/MooseX::Storage) to store/load your Moose objects to Amazon's DynamoDB NoSQL database service.
 
-You should understand the basics of both [MooseX::Storage](https://metacpan.org/pod/MooseX::Storage) and [DynamoDB](http://aws.amazon.com/dynamodb/) before using this module.
+You should understand the basics of [Moose](https://metacpan.org/pod/Moose), [MooseX::Storage](https://metacpan.org/pod/MooseX::Storage), and [DynamoDB](http://aws.amazon.com/dynamodb/) before using this module.
 
 This module uses [Amazon::DynamoDB](https://metacpan.org/pod/Amazon::DynamoDB) as its client library to the DynamoDB service.
 
@@ -128,25 +124,27 @@ Following are methods that will be added to your consuming class.
 
 ## $obj->store(\[ dynamo\_db\_client => $client \]\[, async => 1\])
 
-Object method.  Store the packed Moose object to DynamoDb.  Accepts 2 optional parameters:
+Object method.  Stores the packed Moose object to DynamoDb.  Accepts 2 optional parameters:
 
 - dynamo\_db\_client - Directly provide a Amazon::DynamoDB object, instead of using the dynamo\_db\_client attribute.
 - async - Don't wait for the operation to complete, return a Future object instead.
 
 ## $obj = $class->load($key, \[, dynamo\_db\_client => $client \]\[, inject = { key => val, ... } \])
 
-Class method.  Query DynamoDB with a primary key, and return a new Moose object built from the resulting data.
+Class method.  Queries DynamoDB with a primary key, and returns a new Moose object built from the resulting data.
 
 The first argument is the primary key to use, and is required.
 
 Optional parameters can be specified following the key:
 
 - dynamo\_db\_client - Directly provide a Amazon::DynamoDB object, instead of trying to build one using the class' configuration.
-- inject - supply additional arguments to the class' new function, or override ones from the serialized data.
+- inject - supply additional arguments to the class' new function, or override ones from the resulting data.
 
 ## $class->dynamo\_db\_create\_table(\[, dynamo\_db\_client => $client \]\[ ReadCapacityUnits => X, ... \])
 
 Class method.  Wrapper for [Amazon::DynamoDB](https://metacpan.org/pod/Amazon::DynamoDB)'s create\_table method, with the table name and key already setup.
+
+Takes in dynamo\_db\_client as an optional parameter, all other parameters are passed to Amazon::DynamoDB.
 
 ## $client\_class = $class->dynamo\_db\_client\_class()
 
@@ -189,15 +187,15 @@ You can also change the actual method name via the ["table\_name\_method"](#tabl
 
 Note that this role does not need you to implement a 'format' level for your object, i.e freeze/thaw.  You can add one if you want it for other purposes.
 
-## how references are stored
+## How references are stored
 
-When communicating with the AWS serice, the Amazon::DynamoDB code is not handling arrayrefs correctly (they can be returned out-of-order) or hashrefs at all.  I've added a simple JSON level when encountering references - it should work seamlessly in your Perl code, but if you look up the data directly in DynamoDB you'll see complex data structures stored as JSON strings.
+When communicating with the AWS service, the Amazon::DynamoDB code is not handling arrayrefs correctly (they can be returned out-of-order) or hashrefs at all.  I've added a simple JSON level when encountering references - it should work seamlessly in your Perl code, but if you look up the data directly in DynamoDB you'll see complex data structures stored as JSON strings.
 
 I'm hoping to get this fixed.
 
 # BUGS
 
-See ["how references are stored"](#how-references-are-stored).
+See ["How references are stored"](#how-references-are-stored).
 
 # AUTHOR
 
@@ -205,7 +203,7 @@ Steve Caldwell <scaldwell@gmail.com>
 
 # COPYRIGHT
 
-Copyright 2015- Steve Caldwell
+Copyright 2015- Steve Caldwell <scaldwell@gmail.com>
 
 # LICENSE
 
@@ -214,18 +212,8 @@ it under the same terms as Perl itself.
 
 # SEE ALSO
 
+- [Moose](https://metacpan.org/pod/Moose)
 - [MooseX::Storage](https://metacpan.org/pod/MooseX::Storage)
 - [Amazon's DynamoDB Homepage](http://aws.amazon.com/dynamodb/)
 - [Amazon::DynamoDB](https://metacpan.org/pod/Amazon::DynamoDB) - Perl DynamoDB client.
 - [AWS::CLI::Config](https://metacpan.org/pod/AWS::CLI::Config) - how configuration is done by default.
-
-# AUTHOR
-
-Steve Caldwell <scaldwell@gmail.com>
-
-# COPYRIGHT AND LICENSE
-
-This software is copyright (c) 2015- by Steve Caldwell <scaldwell@gmail.com>.
-
-This is free software; you can redistribute it and/or modify it under
-the same terms as the Perl 5 programming language system itself.
