@@ -18,3 +18,9 @@ on test => sub {
     requires 'MooseX::ClassAttribute';
     requires 'Test::Most';
 };
+
+on build => sub {
+    requires 'Dist::Milla';
+    requires 'Pod::Weaver';
+    requires 'Pod::Elemental::Transformer::List';
+};
