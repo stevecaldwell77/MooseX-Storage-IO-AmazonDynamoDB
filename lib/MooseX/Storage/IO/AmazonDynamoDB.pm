@@ -289,7 +289,7 @@ This module uses L<Amazon::DynamoDB> as its client library to the DynamoDB servi
 
 By default it grabs authentication credentials using the same procedure as the AWS CLI, see L<AWS::CLI::Config>.  You can customize this behavior - see L<"CLIENT CONFIGURATION"> below.
 
-At a bare minimum the consuming class needs to tell this role what table to use and what field to use as a primary key - see L<table_name> and L<key_attr> below.
+At a bare minimum the consuming class needs to tell this role what table to use and what field to use as a primary key - see L<"table_name"> and L<"key_attr">.
 
 =head1 PARAMETERS
 
@@ -301,12 +301,9 @@ There are many parameters you can set when consuming this role that configure it
 
 =head2 table_name
 
-Specifies the name of the DynamoDB table to use for your objects - see the example in the L<"SYNOPSIS>.  Alternatively, you can return the table name via a class method - see L<"dynamo_db_table_name">.
+Specifies the name of the DynamoDB table to use for your objects - see the example in the L<"SYNOPSIS">.  Alternatively, you can return the table name via a class method - see L<"dynamo_db_table_name">.
 
-=head2 client_class
-=head2 host
-=head2 port
-=head2 ssl
+=head2 client_class, host, port, ssl
 
 See L<"CLIENT CONFIGURATION">.
 

@@ -74,7 +74,7 @@ This module uses [Amazon::DynamoDB](https://metacpan.org/pod/Amazon::DynamoDB) a
 
 By default it grabs authentication credentials using the same procedure as the AWS CLI, see [AWS::CLI::Config](https://metacpan.org/pod/AWS::CLI::Config).  You can customize this behavior - see ["CLIENT CONFIGURATION"](#client-configuration) below.
 
-At a bare minimum the consuming class needs to tell this role what table to use and what field to use as a primary key - see [table\_name](https://metacpan.org/pod/table_name) and [key\_attr](https://metacpan.org/pod/key_attr) below.
+At a bare minimum the consuming class needs to tell this role what table to use and what field to use as a primary key - see ["table\_name"](#table_name) and ["key\_attr"](#key_attr).
 
 # PARAMETERS
 
@@ -86,12 +86,9 @@ There are many parameters you can set when consuming this role that configure it
 
 ## table\_name
 
-Specifies the name of the DynamoDB table to use for your objects - see the example in the ["SYNOPSIS](https://metacpan.org/pod/&#x22;SYNOPSIS).  Alternatively, you can return the table name via a class method - see ["dynamo\_db\_table\_name"](#dynamo_db_table_name).
+Specifies the name of the DynamoDB table to use for your objects - see the example in the ["SYNOPSIS"](#synopsis).  Alternatively, you can return the table name via a class method - see ["dynamo\_db\_table\_name"](#dynamo_db_table_name).
 
-## client\_class
-=head2 host
-=head2 port
-=head2 ssl
+## client\_class, host, port, ssl
 
 See ["CLIENT CONFIGURATION"](#client-configuration).
 
