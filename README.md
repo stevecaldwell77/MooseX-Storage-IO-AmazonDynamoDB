@@ -88,25 +88,9 @@ Specifies the name of the DynamoDB table to use for your objects - see the examp
 
 See ["CLIENT CONFIGURATION"](#client-configuration).
 
-## table\_name\_method
+## client\_attr, table\_name\_method, create\_table\_method, client\_class\_method, client\_args\_method
 
-If you want to rename the ["dynamo\_db\_table\_name"](#dynamo_db_table_name) method.
-
-## create\_table\_method
-
-If you want to rename the ["dynamo\_db\_create\_table"](#dynamo_db_create_table) method.
-
-## client\_attr
-
-If you want to rename the ["dynamo\_db\_client"](#dynamo_db_client) attribute.
-
-## client\_class\_method
-
-If you want to rename the ["dynamo\_db\_client\_class"](#dynamo_db_client_class) method.
-
-## client\_args\_method
-
-If you want to rename the ["dynamo\_db\_client\_args"](#dynamo_db_client_args) method.
+Parameters you can use if you want to rename the various attributes and methods that are added to your class by this role.
 
 # ATTRIBUTES
 
@@ -116,7 +100,7 @@ Following are attributes that will be added to your consuming class.
 
 This role adds an attribute named "dynamo\_db\_client" to your consuming class.  This attribute holds an instance of Amazon::DynamoDB that will be used to communicate with the DynamoDB service.  See ["CLIENT CONFIGURATION"](#client-configuration) for more details.
 
-Note that you can change the name of this attribute when consuming this role via the ["client\_attr"](#client_attr) parameter.
+You can change this attribute's name via the client\_attr parameter.
 
 # METHODS
 
@@ -146,13 +130,19 @@ Class method.  Wrapper for [Amazon::DynamoDB](https://metacpan.org/pod/Amazon::D
 
 Takes in dynamo\_db\_client as an optional parameter, all other parameters are passed to Amazon::DynamoDB.
 
+You can change this method's name via the create\_table\_method parameter.
+
 ## $client\_class = $class->dynamo\_db\_client\_class()
 
-See ["CLIENT CONFIGURATION"](#client-configuration)
+See ["CLIENT CONFIGURATION"](#client-configuration).
+
+You can change this method's name via the client\_class\_method parameter.
 
 ## $args = $class->dynamo\_db\_client\_args()
 
 See ["CLIENT CONFIGURATION"](#client-configuration)
+
+You can change this method's name via the client\_args\_method parameter.
 
 # HOOKS
 
@@ -177,7 +167,7 @@ A class method that will return the table name to use.  This method will be call
         return $ENV{DEVELOPMENT} ? 'my_docs_dev' : 'my_docs';
     }
 
-You can also change the actual method name via the ["table\_name\_method"](#table_name_method) parameter.
+You can change this method's name via the table\_name\_method parameter.
 
 # CLIENT CONFIGURATION
 

@@ -305,25 +305,9 @@ Specifies the name of the DynamoDB table to use for your objects - see the examp
 
 See L<"CLIENT CONFIGURATION">.
 
-=head2 table_name_method
+=head2 client_attr, table_name_method, create_table_method, client_class_method, client_args_method
 
-If you want to rename the L<"dynamo_db_table_name"> method.
-
-=head2 create_table_method
-
-If you want to rename the L<"dynamo_db_create_table"> method.
-
-=head2 client_attr
-
-If you want to rename the L<"dynamo_db_client"> attribute.
-
-=head2 client_class_method
-
-If you want to rename the L<"dynamo_db_client_class"> method.
-
-=head2 client_args_method
-
-If you want to rename the L<"dynamo_db_client_args"> method.
+Parameters you can use if you want to rename the various attributes and methods that are added to your class by this role.
 
 =head1 ATTRIBUTES
 
@@ -333,7 +317,7 @@ Following are attributes that will be added to your consuming class.
 
 This role adds an attribute named "dynamo_db_client" to your consuming class.  This attribute holds an instance of Amazon::DynamoDB that will be used to communicate with the DynamoDB service.  See L<"CLIENT CONFIGURATION"> for more details.
 
-Note that you can change the name of this attribute when consuming this role via the L<"client_attr"> parameter.
+You can change this attribute's name via the client_attr parameter.
 
 =head1 METHODS
 
@@ -373,13 +357,19 @@ Class method.  Wrapper for L<Amazon::DynamoDB>'s create_table method, with the t
 
 Takes in dynamo_db_client as an optional parameter, all other parameters are passed to Amazon::DynamoDB.
 
+You can change this method's name via the create_table_method parameter.
+
 =head2 $client_class = $class->dynamo_db_client_class()
 
-See L<"CLIENT CONFIGURATION">
+See L<"CLIENT CONFIGURATION">.
+
+You can change this method's name via the client_class_method parameter.
 
 =head2 $args = $class->dynamo_db_client_args()
 
 See L<"CLIENT CONFIGURATION">
+
+You can change this method's name via the client_args_method parameter.
 
 =head1 HOOKS
 
@@ -404,7 +394,7 @@ A class method that will return the table name to use.  This method will be call
       return $ENV{DEVELOPMENT} ? 'my_docs_dev' : 'my_docs';
   }
 
-You can also change the actual method name via the L<"table_name_method"> parameter.
+You can change this method's name via the table_name_method parameter.
 
 =head1 CLIENT CONFIGURATION
 
