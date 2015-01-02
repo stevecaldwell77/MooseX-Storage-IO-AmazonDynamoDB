@@ -72,7 +72,7 @@ You should understand the basics of both [MooseX::Storage](https://metacpan.org/
 
 This module uses [Amazon::DynamoDB](https://metacpan.org/pod/Amazon::DynamoDB) as its client library to the DynamoDB service.
 
-By default it grabs authentication credentials using the same procedure as the AWS CLI, see [AWS::CLI::Config](https://metacpan.org/pod/AWS::CLI::Config).  You can customize this behavior - see ["CLIENT CONFIGURATION"](#client-configuration) below.
+By default it grabs authentication credentials using the same procedure as the AWS CLI, see [AWS::CLI::Config](https://metacpan.org/pod/AWS::CLI::Config).  You can customize this behavior - see ["CLIENT CONFIGURATION"](#client-configuration).
 
 At a bare minimum the consuming class needs to tell this role what table to use and what field to use as a primary key - see ["table\_name"](#table_name) and ["key\_attr"](#key_attr).
 
@@ -114,37 +114,51 @@ If you want to rename the ["dynamo\_db\_client\_args"](#dynamo_db_client_args) m
 
 # ATTRIBUTES
 
+Following are attributes that will be added to your consuming class.
+
 ## dynamo\_db\_client
 
 This role adds an attribute named "dynamo\_db\_client" to your consuming class.  This attribute holds an instance of Amazon::DynamoDB that will be used to communicate with the DynamoDB service.  See ["CLIENT CONFIGURATION"](#client-configuration) for more details.
 
-Note that you can change the name of this attribute when consuming this role via the 'client\_attr' parameter.  For example, if you wrote:
-
-    with Storage(io => [ 'AmazonDynamoDB' => {
-        table_name  => 'my_docs',
-        key_attr    => 'doc_id',
-        client_attr => 'ddclient',
-    }]);
-
-Your object would now use the "ddclient" attribute to hold the DynamoDB client.
+Note that you can change the name of this attribute when consuming this role via the ["client\_attr"](#client_attr) parameter.
 
 # METHODS
 
-These are methods that will be added to your consuming class.
+Following are methods that will be added to your consuming class.
 
-## store
+## $obj->store(\[ dynamo\_db\_client => $client \]\[, async => 1\])
 
-## load
+Object method.  Store the packed Moose object to DynamoDb.  Accepts 2 optional parameters:
 
-## dynamo\_db\_create\_table
+- dynamo\_db\_client - Directly provide a Amazon::DynamoDB object, instead of using the dynamo\_db\_client attribute.
+- async - Don't wait for the operation to complete, return a Future object instead.
 
-## dynamo\_db\_client\_class
+## $obj = $class->load($key, \[, dynamo\_db\_client => $client \]\[, inject = { key => val, ... } \])
 
-## dynamo\_db\_client\_args
+Class method.  Query DynamoDB with a primary key, and return a new Moose object built from the resulting data.
+
+The first argument is the primary key to use, and is required.
+
+Optional parameters can be specified following the key:
+
+- dynamo\_db\_client - Directly provide a Amazon::DynamoDB object, instead of trying to build one using the class' configuration.
+- inject - supply additional arguments to the class' new function, or override ones from the serialized data.
+
+## $class->dynamo\_db\_create\_table(\[, dynamo\_db\_client => $client \]\[ ReadCapacityUnits => X, ... \])
+
+Class method.  Wrapper for [Amazon::DynamoDB](https://metacpan.org/pod/Amazon::DynamoDB)'s create\_table method, with the table name and key already setup.
+
+## $client\_class = $class->dynamo\_db\_client\_class()
+
+See ["CLIENT CONFIGURATION"](#client-configuration)
+
+## $args = $class->dynamo\_db\_client\_args()
+
+See ["CLIENT CONFIGURATION"](#client-configuration)
 
 # HOOKS
 
-These are methods that your consuming class can provide.
+Following are methods that your consuming class can provide.
 
 ## dynamo\_db\_table\_name
 
@@ -168,6 +182,22 @@ A class method that will return the table name to use.  This method will be call
 You can also change the actual method name via the ["table\_name\_method"](#table_name_method) parameter.
 
 # CLIENT CONFIGURATION
+
+# NOTES
+
+## format level (freeze/thaw)
+
+Note that this role does not need you to implement a 'format' level for your object, i.e freeze/thaw.  You can add one if you want it for other purposes.
+
+## how references are stored
+
+When communicating with the AWS serice, the Amazon::DynamoDB code is not handling arrayrefs correctly (they can be returned out-of-order) or hashrefs at all.  I've added a simple JSON level when encountering references - it should work seamlessly in your Perl code, but if you look up the data directly in DynamoDB you'll see complex data structures stored as JSON strings.
+
+I'm hoping to get this fixed.
+
+# BUGS
+
+See ["how references are stored"](#how-references-are-stored).
 
 # AUTHOR
 

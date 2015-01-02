@@ -122,7 +122,6 @@ role {
     method load => sub {
         my ( $class, $item_key, %args ) = @_;
         my $client = $args{dynamo_db_client} || $build_client->($class);
-        my $async  = $args{async}            || 0;
         my $inject = $args{inject}           || {};
         my $table_name = $get_table_name->($class);
 
@@ -155,10 +154,6 @@ role {
                 $p->key_attr => $item_key,
             }
         );
-
-        if ($async) {
-            return $future;
-        }
 
         return $future->get();
     };
@@ -287,7 +282,7 @@ You should understand the basics of both L<MooseX::Storage> and L<DynamoDB|http:
 
 This module uses L<Amazon::DynamoDB> as its client library to the DynamoDB service.
 
-By default it grabs authentication credentials using the same procedure as the AWS CLI, see L<AWS::CLI::Config>.  You can customize this behavior - see L<"CLIENT CONFIGURATION"> below.
+By default it grabs authentication credentials using the same procedure as the AWS CLI, see L<AWS::CLI::Config>.  You can customize this behavior - see L<"CLIENT CONFIGURATION">.
 
 At a bare minimum the consuming class needs to tell this role what table to use and what field to use as a primary key - see L<"table_name"> and L<"key_attr">.
 
@@ -329,37 +324,53 @@ If you want to rename the L<"dynamo_db_client_args"> method.
 
 =head1 ATTRIBUTES
 
+Following are attributes that will be added to your consuming class.
+
 =head2 dynamo_db_client
 
 This role adds an attribute named "dynamo_db_client" to your consuming class.  This attribute holds an instance of Amazon::DynamoDB that will be used to communicate with the DynamoDB service.  See L<"CLIENT CONFIGURATION"> for more details.
 
-Note that you can change the name of this attribute when consuming this role via the 'client_attr' parameter.  For example, if you wrote:
-
-  with Storage(io => [ 'AmazonDynamoDB' => {
-      table_name  => 'my_docs',
-      key_attr    => 'doc_id',
-      client_attr => 'ddclient',
-  }]);
-
-Your object would now use the "ddclient" attribute to hold the DynamoDB client.
+Note that you can change the name of this attribute when consuming this role via the L<"client_attr"> parameter.
 
 =head1 METHODS
 
-These are methods that will be added to your consuming class.
+Following are methods that will be added to your consuming class.
 
-=head2 store
+=head2 $obj->store([ dynamo_db_client => $client ][, async => 1])
 
-=head2 load
+Object method.  Store the packed Moose object to DynamoDb.  Accepts 2 optional parameters:
 
-=head2 dynamo_db_create_table
+=for :list
+* dynamo_db_client - Directly provide a Amazon::DynamoDB object, instead of using the dynamo_db_client attribute.
+* async - Don't wait for the operation to complete, return a Future object instead.
 
-=head2 dynamo_db_client_class
+=head2 $obj = $class->load($key, [, dynamo_db_client => $client ][, inject = { key => val, ... } ])
 
-=head2 dynamo_db_client_args
+Class method.  Query DynamoDB with a primary key, and return a new Moose object built from the resulting data.
+
+The first argument is the primary key to use, and is required.
+
+Optional parameters can be specified following the key:
+
+=for :list
+* dynamo_db_client - Directly provide a Amazon::DynamoDB object, instead of trying to build one using the class' configuration.
+* inject - supply additional arguments to the class' new function, or override ones from the serialized data.
+
+=head2 $class->dynamo_db_create_table([, dynamo_db_client => $client ][ ReadCapacityUnits => X, ... ])
+
+Class method.  Wrapper for L<Amazon::DynamoDB>'s create_table method, with the table name and key already setup.
+
+=head2 $client_class = $class->dynamo_db_client_class()
+
+See L<"CLIENT CONFIGURATION">
+
+=head2 $args = $class->dynamo_db_client_args()
+
+See L<"CLIENT CONFIGURATION">
 
 =head1 HOOKS
 
-These are methods that your consuming class can provide.
+Following are methods that your consuming class can provide.
 
 =head2 dynamo_db_table_name
 
@@ -383,6 +394,22 @@ A class method that will return the table name to use.  This method will be call
 You can also change the actual method name via the L<"table_name_method"> parameter.
 
 =head1 CLIENT CONFIGURATION
+
+=head1 NOTES
+
+=head2 format level (freeze/thaw)
+
+Note that this role does not need you to implement a 'format' level for your object, i.e freeze/thaw.  You can add one if you want it for other purposes.
+
+=head2 how references are stored
+
+When communicating with the AWS serice, the Amazon::DynamoDB code is not handling arrayrefs correctly (they can be returned out-of-order) or hashrefs at all.  I've added a simple JSON level when encountering references - it should work seamlessly in your Perl code, but if you look up the data directly in DynamoDB you'll see complex data structures stored as JSON strings.
+
+I'm hoping to get this fixed.
+
+=head1 BUGS
+
+See L<"how references are stored">.
 
 =head1 AUTHOR
 
