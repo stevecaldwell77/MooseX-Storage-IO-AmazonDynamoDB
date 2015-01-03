@@ -60,12 +60,17 @@ parameter port => (
 
 parameter ssl => (
     isa     => 'Bool',
-    default => 1,
+    default => undef,
 );
 
 parameter create_table_method => (
     isa     => 'Str',
     default => 'dynamo_db_create_table',
+);
+
+parameter dynamodb_local => (
+    isa     => 'Bool',
+    default => 0,
 );
 
 role {
@@ -96,13 +101,21 @@ role {
 
     method $client_args_method => sub {
         my $region = AWS::CLI::Config::region;
-        my $host = $p->host || "dynamodb.$region.amazonaws.com";
+        my ($host, $port, $ssl);
+        if ($p->dynamodb_local) {
+            $host = 'localhost';
+            $port = 8000;
+            $ssl  = 0;
+        }
+        $host //= $p->host // "dynamodb.$region.amazonaws.com";
+        $port //= $p->port;
+        $ssl  //= $p->ssl // 1;
         return {
             access_key => AWS::CLI::Config::access_key_id,
             secret_key => AWS::CLI::Config::secret_access_key,
             host       => $host,
-            port       => $p->port,
-            ssl        => $p->ssl,
+            port       => $port,
+            ssl        => $ssl,
         };
     };
 

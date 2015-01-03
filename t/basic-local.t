@@ -20,11 +20,9 @@ my $table_name = 'moosex-storage-io-amazondynamodb-'.time;
     use MooseX::Storage;
 
     with Storage(io => [ 'AmazonDynamoDB' => {
-        host       => 'localhost',
-        port       => '8000',
-        ssl        => 0,
-        table_name => $table_name,
-        key_attr   => 'doc_id',
+        table_name     => $table_name,
+        key_attr       => 'doc_id',
+        dynamodb_local => 1,
     }]);
 
     has 'doc_id'  => (is => 'ro', isa => 'Str', required => 1);
