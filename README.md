@@ -150,22 +150,6 @@ Takes in dynamo\_db\_client as an optional parameter, all other parameters are p
 
 You can change this method's name via the create\_table\_method parameter.
 
-## $client = $class->build\_dynamo\_db\_client()
-
-See ["CLIENT CONFIGURATION"](#client-configuration).
-
-You can change this method's name via the client\_builder\_method parameter.
-
-## $args = $class->dynamo\_db\_client\_args()
-
-See ["CLIENT CONFIGURATION"](#client-configuration)
-
-You can change this method's name via the client\_args\_method parameter.
-
-# HOOKS
-
-Following are methods that your consuming class can provide.
-
 ## dynamo\_db\_table\_name
 
 A class method that will return the table name to use.  This method will be called if the ["table\_name"](#table_name) parameter is not set.  So you could rewrite the Moose class in the ["SYNOPSIS"](#synopsis) like this:
@@ -186,6 +170,18 @@ A class method that will return the table name to use.  This method will be call
     }
 
 You can change this method's name via the table\_name\_method parameter.
+
+## $client = $class->build\_dynamo\_db\_client()
+
+See ["CLIENT CONFIGURATION"](#client-configuration).
+
+You can change this method's name via the client\_builder\_method parameter.
+
+## $args = $class->dynamo\_db\_client\_args()
+
+See ["CLIENT CONFIGURATION"](#client-configuration)
+
+You can change this method's name via the client\_args\_method parameter.
 
 # CLIENT CONFIGURATION
 
