@@ -1,6 +1,6 @@
 # NAME
 
-MooseX::Storage::IO::AmazonDynamoDB - Save Moose objects to AWS's DynamoDB, via MooseX::Storage.
+MooseX::Storage::IO::AmazonDynamoDB - Store and retrieve Moose objects to AWS's DynamoDB, via MooseX::Storage.
 
 # SYNOPSIS
 
