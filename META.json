@@ -50,6 +50,7 @@
             "Moose" : "0",
             "MooseX::Role::Parameterized" : "0",
             "MooseX::Storage" : "0",
+            "Throwable::Error" : "0",
             "Type::Tiny" : "0",
             "namespace::autoclean" : "0",
             "perl" : "5.014"

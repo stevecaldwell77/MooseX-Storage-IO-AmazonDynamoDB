@@ -133,7 +133,7 @@ Object method.  Stores the packed Moose object to DynamoDb.  Accepts 2 optional 
 
 ## $obj = $class->load($key, \[, dynamo\_db\_client => $client \]\[, inject => { key => val, ... } \])
 
-Class method.  Queries DynamoDB with a primary key, and returns a new Moose object built from the resulting data.
+Class method.  Queries DynamoDB with a primary key, and returns a new Moose object built from the resulting data.  Returns undefined if they key could not be found in DyanmoDB.
 
 The first argument is the primary key to use, and is required.
 
