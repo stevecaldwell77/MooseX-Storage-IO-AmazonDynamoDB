@@ -315,11 +315,25 @@ Specifies the name of the DynamoDB table to use for your objects - see the examp
 
 Use a local DynamoDB server - see L<"DYNAMODB LOCAL">.
 
-=head2 client_class, host, port, ssl
+=head2 client_class
+
+=head2 host
+
+=head2 port
+
+=head2 ssl
 
 See L<"CLIENT CONFIGURATION">.
 
-=head2 client_attr, table_name_method, create_table_method, client_builder_method, client_args_method
+=head2 client_attr
+
+=head2 table_name_method
+
+=head2 create_table_method
+
+=head2 client_builder_method
+
+=head2 client_args_method
 
 Parameters you can use if you want to rename the various attributes and methods that are added to your class by this role.
 
