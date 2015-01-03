@@ -8,6 +8,7 @@ requires 'Module::Runtime';
 requires 'Moose';
 requires 'MooseX::Role::Parameterized';
 requires 'MooseX::Storage';
+requires 'Throwable::Error';
 requires 'Type::Tiny';
 requires 'namespace::autoclean';
 

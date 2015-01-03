@@ -11,6 +11,7 @@ use Module::Runtime qw(use_module);
 use MooseX::Role::Parameterized;
 use MooseX::Storage;
 use Types::Standard qw(Str HashRef HasMethods);
+use Throwable::Error;
 use namespace::autoclean;
 
 parameter key_attr => (
@@ -132,10 +133,10 @@ role {
         my $inject = $args{inject}           || {};
         my $table_name = $class->$table_name_method();
 
-        # TBD: handle failures
-
         my $unpacker = sub {
             my $packed = shift;
+
+            return undef unless $packed;
 
             # Refs are stored as JSON
             foreach my $key (%$packed) {
@@ -171,8 +172,6 @@ role {
         my $async  = $args{async}            || 0;
         my $table_name = $self->$table_name_method();
 
-        # TBD: handle failures
-
         # Store refs as JSON
         my $packed = $self->pack;
         foreach my $key (%$packed) {
@@ -186,13 +185,25 @@ role {
         my $future = $client->put_item(
             TableName => $table_name,
             Item      => $packed,
-        );
+        )->on_fail(sub {
+            my ($e) = @_;
+            my $message = 'An error occurred while executing put_item: ';
+            if (ref $e && ref $e eq 'HASH' && $e->{Message}) {
+                $message .= $e->{Message};
+                if ($e->{type}) {
+                    $message .= ' (type '.$e->{type}.')';
+                }
+            } else {
+                $message = "Unknown error: $e";
+            }
+            Throwable::Error->throw($message);
+        });
 
         if ($async) {
             return $future;
         }
 
-        return $future->get();
+        $future->get();
     };
 
     method $p->create_table_method => sub {
@@ -363,7 +374,7 @@ Object method.  Stores the packed Moose object to DynamoDb.  Accepts 2 optional 
 
 =head2 $obj = $class->load($key, [, dynamo_db_client => $client ][, inject => { key => val, ... } ])
 
-Class method.  Queries DynamoDB with a primary key, and returns a new Moose object built from the resulting data.
+Class method.  Queries DynamoDB with a primary key, and returns a new Moose object built from the resulting data.  Returns undefined if they key could not be found in DyanmoDB.
 
 The first argument is the primary key to use, and is required.
 
