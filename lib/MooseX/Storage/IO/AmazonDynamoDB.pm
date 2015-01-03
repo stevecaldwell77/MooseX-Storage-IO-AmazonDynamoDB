@@ -35,7 +35,7 @@ parameter client_attr => (
 
 parameter client_builder_method => (
     isa     => 'Str',
-    default => '_build_dynamo_db_client',
+    default => 'build_dynamo_db_client',
 );
 
 parameter client_class => (
@@ -387,7 +387,7 @@ Takes in dynamo_db_client as an optional parameter, all other parameters are pas
 
 You can change this method's name via the create_table_method parameter.
 
-=head2 $client = $class->_build_dynamo_db_client()
+=head2 $client = $class->build_dynamo_db_client()
 
 See L<"CLIENT CONFIGURATION">.
 
@@ -473,11 +473,11 @@ D) Override the dynamo_db_client_args method in your class to provide your own p
       };
   }
 
-E) Override the _build_dynamo_db_client method in your class to provide your own client object.  The returned object must provide the get_item and put_item methods.
+E) Override the build_dynamo_db_client method in your class to provide your own client object.  The returned object must provide the get_item and put_item methods.
 
   package MyDoc;
   ...
-  sub _build_dynamo_db_client {
+  sub build_dynamo_db_client {
       my $class = shift;
       return Amazon::DynamoDB->new(
           %{ My::Config::Class->dynamo_db_config },
