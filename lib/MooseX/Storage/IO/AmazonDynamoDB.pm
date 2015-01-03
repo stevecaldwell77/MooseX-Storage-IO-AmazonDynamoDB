@@ -33,14 +33,14 @@ parameter client_attr => (
     default => 'dynamo_db_client',
 );
 
+parameter client_builder_method => (
+    isa     => 'Str',
+    default => '_build_dynamo_db_client',
+);
+
 parameter client_class => (
     isa     => 'Str',
     default => 'Amazon::DynamoDB',
-);
-
-parameter client_class_method => (
-    isa     => 'Str',
-    default => 'dynamo_db_client_class',
 );
 
 parameter client_args_method => (
@@ -74,15 +74,15 @@ role {
     requires 'pack';
     requires 'unpack';
 
-    my $client_attr         = $p->client_attr;
-    my $client_class_method = $p->client_class_method;
-    my $client_args_method  = $p->client_args_method;
+    my $client_attr           = $p->client_attr;
+    my $client_builder_method = $p->client_builder_method;
+    my $client_args_method    = $p->client_args_method;
 
-    my $build_client = sub {
-        my $ref = shift;
-        my $client_class = $ref->$client_class_method();
+    method $client_builder_method => sub {
+        my $class = ref $_[0] || $_[0];
+        my $client_class = $p->client_class;
         use_module($client_class);
-        my $client_args  = $ref->$client_args_method();
+        my $client_args  = $class->$client_args_method();
         return $client_class->new(%$client_args);
     };
 
@@ -91,10 +91,8 @@ role {
         isa     => HasMethods[qw(get_item put_item)],
         lazy    => 1,
         traits  => [ 'DoNotSerialize' ],
-        default => $build_client,
+        default => sub { shift->$client_builder_method },
     );
-
-    method $client_class_method => sub { $p->client_class };
 
     method $client_args_method => sub {
         my $region = AWS::CLI::Config::region;
@@ -109,18 +107,17 @@ role {
     };
 
     my $get_table_name = sub {
-        my $ref = shift;
+        my $class = ref $_[0] || $_[0];
         return $p->table_name if $p->table_name;
         if (my $method = $p->table_name_method) {
-            return $ref->$method;
+            return $class->$method;
         }
-        my $class = ref $ref || $ref;
         die "$class: no table name defined!";
     };
 
     method load => sub {
         my ( $class, $item_key, %args ) = @_;
-        my $client = $args{dynamo_db_client} || $build_client->($class);
+        my $client = $args{dynamo_db_client} || $class->$client_builder_method;
         my $inject = $args{inject}           || {};
         my $table_name = $get_table_name->($class);
 
@@ -190,7 +187,7 @@ role {
     method $p->create_table_method => sub {
         my ( $class, %args ) = @_;
         my $client = delete $args{dynamo_db_client}
-                     || $build_client->($class);
+                     || $class->$client_builder_method;
 
         my $table_name = $get_table_name->($class);
         my $key_name   = $p->key_attr;
