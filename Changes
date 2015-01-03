@@ -1,4 +1,6 @@
 Revision history for MooseX-Storage-IO-AmazonDynamoDB
 
 {{$NEXT}}
+
+0.01  2015-01-02 17:21:00 PST
         - Initial release
