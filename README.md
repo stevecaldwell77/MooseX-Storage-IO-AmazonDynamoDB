@@ -131,7 +131,7 @@ Object method.  Stores the packed Moose object to DynamoDb.  Accepts 2 optional 
 - dynamo\_db\_client - Directly provide a Amazon::DynamoDB object, instead of using the dynamo\_db\_client attribute.
 - async - Don't wait for the operation to complete, return a Future object instead.
 
-## $obj = $class->load($key, \[, dynamo\_db\_client => $client \]\[, inject = { key => val, ... } \])
+## $obj = $class->load($key, \[, dynamo\_db\_client => $client \]\[, inject => { key => val, ... } \])
 
 Class method.  Queries DynamoDB with a primary key, and returns a new Moose object built from the resulting data.
 
