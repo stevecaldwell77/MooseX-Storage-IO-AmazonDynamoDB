@@ -82,6 +82,7 @@ role {
     my $client_attr           = $p->client_attr;
     my $client_builder_method = $p->client_builder_method;
     my $client_args_method    = $p->client_args_method;
+    my $table_name_method     = $p->table_name_method;
 
     method $client_builder_method => sub {
         my $class = ref $_[0] || $_[0];
@@ -119,12 +120,9 @@ role {
         };
     };
 
-    my $get_table_name = sub {
+    method $table_name_method => sub {
         my $class = ref $_[0] || $_[0];
         return $p->table_name if $p->table_name;
-        if (my $method = $p->table_name_method) {
-            return $class->$method;
-        }
         die "$class: no table name defined!";
     };
 
@@ -132,7 +130,7 @@ role {
         my ( $class, $item_key, %args ) = @_;
         my $client = $args{dynamo_db_client} || $class->$client_builder_method;
         my $inject = $args{inject}           || {};
-        my $table_name = $get_table_name->($class);
+        my $table_name = $class->$table_name_method();
 
         # TBD: handle failures
 
@@ -171,7 +169,7 @@ role {
         my ( $self, %args ) = @_;
         my $client = $args{dynamo_db_client} || $self->$client_attr;
         my $async  = $args{async}            || 0;
-        my $table_name = $get_table_name->($self);
+        my $table_name = $self->$table_name_method();
 
         # TBD: handle failures
 
@@ -202,7 +200,7 @@ role {
         my $client = delete $args{dynamo_db_client}
                      || $class->$client_builder_method;
 
-        my $table_name = $get_table_name->($class);
+        my $table_name = $class->$table_name_method();
         my $key_name   = $p->key_attr;
 
         $client->create_table(
@@ -387,22 +385,6 @@ Takes in dynamo_db_client as an optional parameter, all other parameters are pas
 
 You can change this method's name via the create_table_method parameter.
 
-=head2 $client = $class->build_dynamo_db_client()
-
-See L<"CLIENT CONFIGURATION">.
-
-You can change this method's name via the client_builder_method parameter.
-
-=head2 $args = $class->dynamo_db_client_args()
-
-See L<"CLIENT CONFIGURATION">
-
-You can change this method's name via the client_args_method parameter.
-
-=head1 HOOKS
-
-Following are methods that your consuming class can provide.
-
 =head2 dynamo_db_table_name
 
 A class method that will return the table name to use.  This method will be called if the L<"table_name"> parameter is not set.  So you could rewrite the Moose class in the L<"SYNOPSIS"> like this:
@@ -423,6 +405,18 @@ A class method that will return the table name to use.  This method will be call
   }
 
 You can change this method's name via the table_name_method parameter.
+
+=head2 $client = $class->build_dynamo_db_client()
+
+See L<"CLIENT CONFIGURATION">.
+
+You can change this method's name via the client_builder_method parameter.
+
+=head2 $args = $class->dynamo_db_client_args()
+
+See L<"CLIENT CONFIGURATION">
+
+You can change this method's name via the client_args_method parameter.
 
 =head1 CLIENT CONFIGURATION
 
