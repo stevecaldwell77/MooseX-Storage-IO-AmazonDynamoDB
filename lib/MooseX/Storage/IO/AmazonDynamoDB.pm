@@ -509,19 +509,6 @@ I'm hoping to get this fixed.
 
 See L<"How references are stored">.
 
-=head1 AUTHOR
-
-Steve Caldwell E<lt>scaldwell@gmail.comE<gt>
-
-=head1 COPYRIGHT
-
-Copyright 2015- Steve Caldwell E<lt>scaldwell@gmail.comE<gt>
-
-=head1 LICENSE
-
-This library is free software; you can redistribute it and/or modify
-it under the same terms as Perl itself.
-
 =head1 SEE ALSO
 
 =over 4
@@ -537,5 +524,22 @@ it under the same terms as Perl itself.
 =item L<AWS::CLI::Config> - how configuration is done by default.
 
 =back
+
+=head1 AUTHOR
+
+Steve Caldwell E<lt>scaldwell@gmail.comE<gt>
+
+=head1 COPYRIGHT
+
+Copyright 2015- Steve Caldwell E<lt>scaldwell@gmail.comE<gt>
+
+=head1 LICENSE
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+=head1 ACKNOWLEDGEMENTS
+
+Thanks to L<Campus Explorer|http://www.campusexplorer.com>, who allowed me to release this code as open source.
 
 =cut

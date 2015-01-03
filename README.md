@@ -84,11 +84,15 @@ There are many parameters you can set when consuming this role that configure it
 
 Specifies the name of the DynamoDB table to use for your objects - see the example in the ["SYNOPSIS"](#synopsis).  Alternatively, you can return the table name via a class method - see ["dynamo\_db\_table\_name"](#dynamo_db_table_name).
 
+## dynamodb\_local
+
+Use a local DynamoDB server - see ["DYNAMODB LOCAL"](#dynamodb-local).
+
 ## client\_class, host, port, ssl
 
 See ["CLIENT CONFIGURATION"](#client-configuration).
 
-## client\_attr, table\_name\_method, create\_table\_method, client\_class\_method, client\_args\_method
+## client\_attr, table\_name\_method, create\_table\_method, client\_builder\_method, client\_args\_method
 
 Parameters you can use if you want to rename the various attributes and methods that are added to your class by this role.
 
@@ -132,11 +136,11 @@ Takes in dynamo\_db\_client as an optional parameter, all other parameters are p
 
 You can change this method's name via the create\_table\_method parameter.
 
-## $client\_class = $class->dynamo\_db\_client\_class()
+## $client = $class->\_build\_dynamo\_db\_client()
 
 See ["CLIENT CONFIGURATION"](#client-configuration).
 
-You can change this method's name via the client\_class\_method parameter.
+You can change this method's name via the client\_builder\_method parameter.
 
 ## $args = $class->dynamo\_db\_client\_args()
 
@@ -171,6 +175,87 @@ You can change this method's name via the table\_name\_method parameter.
 
 # CLIENT CONFIGURATION
 
+There are a handful ways to configure how this module sets up a client to talk to DynamoDB:
+
+A) Do nothing, in which case an [Amazon::DynamoDB](https://metacpan.org/pod/Amazon::DynamoDB) object will be automatically created for you using configuration parameters gleaned from [AWS::CLI::Config](https://metacpan.org/pod/AWS::CLI::Config).
+
+B) Pass your own [Amazon::DynamoDB](https://metacpan.org/pod/Amazon::DynamoDB) client object at every call, e.g.
+
+    my $client = Amazon::DynamoDB(...);
+    my $obj    = MyDoc->new(...);
+    $obj->store(dynamo_db_client => $client);
+    my $obj2 = MyDoc->load(dynamo_db_client => $client);
+
+C) Set some [Amazon::DynamoDB](https://metacpan.org/pod/Amazon::DynamoDB) parameters when consuming the role.  The following are available: host, port, ssl.
+
+    package MyDoc;
+    use Moose;
+    use MooseX::Storage;
+
+    with Storage(io => [ 'AmazonDynamoDB' => {
+        table_name => 'my_docs',
+        key_attr   => 'doc_id',
+        host       => $ENV{DYNAMODB_HOST},
+        port       => $ENV{DYNAMODB_PORT},
+        ssl        => $ENV{DYNAMODB_SSL},
+    }]);
+
+D) Override the dynamo\_db\_client\_args method in your class to provide your own parameters to [Amazon::DynamoDB](https://metacpan.org/pod/Amazon::DynamoDB)'s constructor.  Note that you can also set the client\_class parameter when consuming the role if you want to pass these args to a class other than [Amazon::DynamoDB](https://metacpan.org/pod/Amazon::DynamoDB) - this could be useful in tests.  Objects instantiated using client\_class must provide the get\_item and put\_item methods.
+
+    package MyDoc;
+    use Moose;
+    use MooseX::Storage;
+
+    with Storage(io => [ 'AmazonDynamoDB' => {
+        table_name   => 'my_docs',
+        key_attr     => 'doc_id',
+        client_class => $ENV{DEVELOPMENT} ? 'MyTestClass' : 'Amazon::DynamoDB',
+    }]);
+
+    sub dynamo_db_client_args {
+        my $class = shift;
+        return {
+              access_key => 'my access key',
+              secret_key => 'my secret key',
+              host       => 'dynamodb.us-west-1.amazonaws.com',
+              ssl        => 1,
+        };
+    }
+
+E) Override the \_build\_dynamo\_db\_client method in your class to provide your own client object.  The returned object must provide the get\_item and put\_item methods.
+
+    package MyDoc;
+    ...
+    sub _build_dynamo_db_client {
+        my $class = shift;
+        return Amazon::DynamoDB->new(
+            %{ My::Config::Class->dynamo_db_config },
+        );
+    }
+
+# DYNAMODB LOCAL
+
+If you're using this module, you might want to check out [DynamoDB Local](http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Tools.DynamoDBLocal.html).  For instance, you might want your development code to hit a local server and your production code to go to Amazon.  This role has a dynamodb\_local parameter you can use to make this easier.
+
+    package MyDoc;
+    use Moose;
+    use MooseX::Storage;
+
+    with Storage(io => [ 'AmazonDynamoDB' => {
+        table_name     => 'my_docs',
+        key_attr       => 'doc_id',
+        dynamodb_local => $ENV{DEVELOPMENT} ? 1 : 0,
+    }]);
+
+Having a true value for dynamodb\_local is equivalent to:
+
+    with Storage(io => [ 'AmazonDynamoDB' => {
+        ...
+        host       => 'localhost',
+        port       => '8000',
+        ssl        => 0,
+    }]);
+
 # NOTES
 
 ## format level (freeze/thaw)
@@ -187,6 +272,14 @@ I'm hoping to get this fixed.
 
 See ["How references are stored"](#how-references-are-stored).
 
+# SEE ALSO
+
+- [Moose](https://metacpan.org/pod/Moose)
+- [MooseX::Storage](https://metacpan.org/pod/MooseX::Storage)
+- [Amazon's DynamoDB Homepage](http://aws.amazon.com/dynamodb/)
+- [Amazon::DynamoDB](https://metacpan.org/pod/Amazon::DynamoDB) - Perl DynamoDB client.
+- [AWS::CLI::Config](https://metacpan.org/pod/AWS::CLI::Config) - how configuration is done by default.
+
 # AUTHOR
 
 Steve Caldwell <scaldwell@gmail.com>
@@ -200,10 +293,6 @@ Copyright 2015- Steve Caldwell <scaldwell@gmail.com>
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
 
-# SEE ALSO
+# ACKNOWLEDGEMENTS
 
-- [Moose](https://metacpan.org/pod/Moose)
-- [MooseX::Storage](https://metacpan.org/pod/MooseX::Storage)
-- [Amazon's DynamoDB Homepage](http://aws.amazon.com/dynamodb/)
-- [Amazon::DynamoDB](https://metacpan.org/pod/Amazon::DynamoDB) - Perl DynamoDB client.
-- [AWS::CLI::Config](https://metacpan.org/pod/AWS::CLI::Config) - how configuration is done by default.
+Thanks to [Campus Explorer](http://www.campusexplorer.com), who allowed me to release this code as open source.
