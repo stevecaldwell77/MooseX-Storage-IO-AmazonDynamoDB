@@ -18,9 +18,5 @@ on test => sub {
     requires 'Kavorka';
     requires 'MooseX::ClassAttribute';
     requires 'Test::Most';
-};
-
-on build => sub {
-    requires 'Dist::Milla';
     requires 'Test::Pod';
 };
