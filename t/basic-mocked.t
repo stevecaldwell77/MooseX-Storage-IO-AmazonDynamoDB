@@ -1,4 +1,4 @@
-use lib 'tlib';
+use lib 't/lib';
 use strict;
 use Test::Most;
 
