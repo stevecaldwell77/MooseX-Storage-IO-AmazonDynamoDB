@@ -24,12 +24,6 @@
       ]
    },
    "prereqs" : {
-      "build" : {
-         "requires" : {
-            "Dist::Milla" : "0",
-            "Test::Pod" : "0"
-         }
-      },
       "configure" : {
          "requires" : {
             "Module::Build::Tiny" : "0.039"
@@ -63,7 +57,8 @@
             "Future" : "0",
             "Kavorka" : "0",
             "MooseX::ClassAttribute" : "0",
-            "Test::Most" : "0"
+            "Test::Most" : "0",
+            "Test::Pod" : "0"
          }
       }
    },
@@ -79,6 +74,6 @@
          "web" : "https://github.com/stevecaldwell77/MooseX-Storage-IO-AmazonDynamoDB"
       }
    },
-   "version" : "0.02"
+   "version" : "0.03"
 }
 

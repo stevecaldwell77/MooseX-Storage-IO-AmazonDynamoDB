@@ -2,6 +2,9 @@ Revision history for MooseX-Storage-IO-AmazonDynamoDB
 
 {{$NEXT}}
 
+0.03  2015-01-05 11:41:03 PST
+        - cleanup of some Dist::Milla stuff
+
 0.02  2015-01-05 10:04:32 PST
         - add missing dependency
         - move test libraries under t/
