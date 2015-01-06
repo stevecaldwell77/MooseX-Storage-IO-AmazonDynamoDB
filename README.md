@@ -268,7 +268,11 @@ Having a true value for dynamodb\_local is equivalent to:
 
 # NOTES
 
-## format level (freeze/thaw)
+## Strongly consistent reads
+
+When executing load(), this module will always use strongly consistent reads when calling DynamoDB's GetItem operation.  Read about DyanmoDB's consistency model in their [FAQ](http://aws.amazon.com/dynamodb/faqs/) to learn more.
+
+## Format level (freeze/thaw)
 
 Note that this role does not need you to implement a 'format' level for your object, i.e freeze/thaw.  You can add one if you want it for other purposes.
 
