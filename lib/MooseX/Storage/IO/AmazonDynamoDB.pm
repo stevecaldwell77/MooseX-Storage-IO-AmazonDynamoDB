@@ -153,11 +153,13 @@ role {
                 }
             }
 
-            return $class->unpack({
-                %$packed,
-                %$inject,
-                $client_attr => $client,
-            });
+            return $class->unpack(
+                $packed,
+                inject => {
+                    %$inject,
+                    $client_attr => $client,
+                }
+            );
         };
 
         my $future = $client->get_item(
