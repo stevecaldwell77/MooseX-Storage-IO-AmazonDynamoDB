@@ -2,7 +2,7 @@ package MooseX::Storage::IO::AmazonDynamoDB;
 
 use strict;
 use 5.014;
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 use Amazon::DynamoDB;
 use AWS::CLI::Config;

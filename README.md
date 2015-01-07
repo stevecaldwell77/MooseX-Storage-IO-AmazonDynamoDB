@@ -282,9 +282,17 @@ When communicating with the AWS service, the Amazon::DynamoDB code is not handli
 
 I'm hoping to get this fixed.
 
+## How undefs are stored
+
+There's a similar problem with how Amazon::DynamoDB stores undef values:
+
+[https://github.com/rustyconover/Amazon-DynamoDB/issues/4](https://github.com/rustyconover/Amazon-DynamoDB/issues/4)
+
+I've worked around this issue the same way for now - via JSON encode/decode.
+
 # BUGS
 
-See ["How references are stored"](#how-references-are-stored).
+See ["How references are stored"](#how-references-are-stored), ["How undefs are stored"](#how-undefs-are-stored)
 
 # SEE ALSO
 
