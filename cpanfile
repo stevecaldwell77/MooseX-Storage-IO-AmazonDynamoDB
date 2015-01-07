@@ -2,6 +2,7 @@ requires 'perl', '5.014';
 
 requires 'AWS::CLI::Config';
 requires 'Amazon::DynamoDB';
+requires 'Data::Dumper';
 requires 'IO::Socket::SSL';
 requires 'JSON::MaybeXS';
 requires 'Module::Runtime';

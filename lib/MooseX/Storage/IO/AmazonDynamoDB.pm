@@ -6,6 +6,7 @@ our $VERSION = '0.05';
 
 use Amazon::DynamoDB;
 use AWS::CLI::Config;
+use Data::Dumper;
 use JSON::MaybeXS;
 use Module::Runtime qw(use_module);
 use MooseX::Role::Parameterized;
@@ -197,13 +198,18 @@ role {
         )->on_fail(sub {
             my ($e) = @_;
             my $message = 'An error occurred while executing put_item: ';
-            if (ref $e && ref $e eq 'HASH' && $e->{Message}) {
-                $message .= $e->{Message};
-                if ($e->{type}) {
-                    $message .= ' (type '.$e->{type}.')';
+            if (ref $e && ref $e eq 'HASH') {
+                my $submessage = $e->{Message} || $e->{message};
+                if ($submessage) {
+                    $message .= $submessage;
+                    if ($e->{type}) {
+                        $message .= ' (type '.$e->{type}.')';
+                    }
+                } else {
+                    $message .= 'Unknown error: '.Dumper($e);
                 }
             } else {
-                $message = "Unknown error: $e";
+                $message .= "Unknown error: $e";
             }
             Throwable::Error->throw($message);
         });
