@@ -19,4 +19,5 @@ on test => sub {
     requires 'MooseX::ClassAttribute';
     requires 'Test::Most';
     requires 'Test::Pod';
+    requires 'Test::Warnings';
 };

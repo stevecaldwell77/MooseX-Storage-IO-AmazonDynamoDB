@@ -1,6 +1,7 @@
 use lib 't/lib';
 use strict;
 use Test::Most;
+use Test::Warnings;
 
 #
 # This runs a basic set of tests, using a mocked DynamoDB client.
@@ -30,6 +31,7 @@ my $table_name = 'moosex-storage-io-amazondynamodb-'.time;
     has 'body'    => (is => 'rw', isa => 'Str');
     has 'tags'    => (is => 'rw', isa => 'ArrayRef');
     has 'authors' => (is => 'rw', isa => 'HashRef');
+    has 'deleted_date' => (is => 'rw', isa => 'Maybe[Str]');
 }
 
 TestDynamoDB->create_table(
@@ -54,6 +56,7 @@ my $doc = MyDoc->new(
             roles => [qw(editor reader)],
         },
     },
+    deleted_date => undef,
 );
 
 $doc->store();
@@ -81,6 +84,7 @@ cmp_deeply(
                     roles => [qw(editor reader)],
                 },
             },
+            deleted_date => undef,
         ),
     ),
     'retrieved document looks good',

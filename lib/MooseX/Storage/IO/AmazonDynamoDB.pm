@@ -139,11 +139,15 @@ role {
             return undef unless $packed;
 
             # Refs are stored as JSON
-            foreach my $key (%$packed) {
+            foreach my $key (keys %$packed) {
                 my $value = $packed->{$key};
                 if ($value && $value =~ /^\$json\$v(\d+)\$:(.+)$/) {
                     my ($version, $json) = ($1, $2);
-                    state $coder = JSON::MaybeXS->new(utf8=>1);
+                    state $coder = JSON::MaybeXS->new(
+                        utf8         => 1,
+                        canonical    => 1,
+                        allow_nonref => 1,
+                    );
                     $packed->{$key} = $coder->decode($json);
                 }
             }
@@ -173,12 +177,16 @@ role {
         my $async  = $args{async}            || 0;
         my $table_name = $self->$table_name_method();
 
-        # Store refs as JSON
+        # Store undefs and refs as JSON
         my $packed = $self->pack;
-        foreach my $key (%$packed) {
+        foreach my $key (keys %$packed) {
             my $value = $packed->{$key};
-            if (ref $value) {
-                state $coder = JSON::MaybeXS->new(utf8=>1, canonical=>1);
+            if ((ref $value) || (! defined $value)) {
+                state $coder = JSON::MaybeXS->new(
+                    utf8         => 1,
+                    canonical    => 1,
+                    allow_nonref => 1,
+                );
                 $packed->{$key} = '$json$v1$:'.$coder->encode($value);
             }
         }
@@ -529,9 +537,17 @@ When communicating with the AWS service, the Amazon::DynamoDB code is not handli
 
 I'm hoping to get this fixed.
 
+=head2 How undefs are stored
+
+There's a similar problem with how Amazon::DynamoDB stores undef values:
+
+L<https://github.com/rustyconover/Amazon-DynamoDB/issues/4>
+
+I've worked around this issue the same way for now - via JSON encode/decode.
+
 =head1 BUGS
 
-See L<"How references are stored">.
+See L<"How references are stored">, L<"How undefs are stored">
 
 =head1 SEE ALSO
 

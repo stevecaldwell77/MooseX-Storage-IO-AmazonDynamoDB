@@ -1,6 +1,7 @@
 use lib 't/lib';
 use strict;
 use Test::Most;
+use Test::Warnings;
 
 #
 # This runs a basic set of tests, running against a real DynamoDB server.
@@ -25,6 +26,7 @@ my $table_name = 'moosex-storage-io-amazondynamodb-'.time;
     has 'body'    => (is => 'rw', isa => 'Str');
     has 'tags'    => (is => 'rw', isa => 'ArrayRef');
     has 'authors' => (is => 'rw', isa => 'HashRef');
+    has 'deleted_date' => (is => 'rw', isa => 'Maybe[Str]');
 }
 
 SKIP: {
@@ -51,6 +53,7 @@ SKIP: {
                 roles => [qw(editor reader)],
             },
         },
+        deleted_date => undef,
     );
 
     $doc->store();
@@ -78,6 +81,7 @@ SKIP: {
                         roles => [qw(editor reader)],
                     },
                 },
+                deleted_date => undef,
             ),
         ),
         'retrieved document looks good',
