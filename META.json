@@ -39,6 +39,7 @@
          "requires" : {
             "AWS::CLI::Config" : "0",
             "Amazon::DynamoDB" : "0",
+            "Data::Dumper" : "0",
             "IO::Socket::SSL" : "0",
             "JSON::MaybeXS" : "0",
             "Module::Runtime" : "0",
@@ -75,6 +76,6 @@
          "web" : "https://github.com/stevecaldwell77/MooseX-Storage-IO-AmazonDynamoDB"
       }
    },
-   "version" : "0.05"
+   "version" : "0.06"
 }
 

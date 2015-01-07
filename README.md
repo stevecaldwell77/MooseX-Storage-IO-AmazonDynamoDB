@@ -282,9 +282,9 @@ When communicating with the AWS service, the Amazon::DynamoDB code is not handli
 
 I'm hoping to get this fixed.
 
-## How undefs are stored
+## How undefs and empty strings are stored
 
-There's a similar problem with how Amazon::DynamoDB stores undef values:
+There's a similar problem with how Amazon::DynamoDB stores undef values and empty strings:
 
 [https://github.com/rustyconover/Amazon-DynamoDB/issues/4](https://github.com/rustyconover/Amazon-DynamoDB/issues/4)
 
