@@ -139,7 +139,7 @@ role {
 
             return undef unless $packed;
 
-            # Refs are stored as JSON
+            # Deserialize JSON values
             foreach my $key (keys %$packed) {
                 my $value = $packed->{$key};
                 if ($value && $value =~ /^\$json\$v(\d+)\$:(.+)$/) {
@@ -182,7 +182,12 @@ role {
         my $packed = $self->pack;
         foreach my $key (keys %$packed) {
             my $value = $packed->{$key};
-            if ((ref $value) || (! defined $value)) {
+            my $store_as_json = (
+                (ref $value)
+                || (! defined $value)
+                || (! length($value))
+            );
+            if ($store_as_json) {
                 state $coder = JSON::MaybeXS->new(
                     utf8         => 1,
                     canonical    => 1,
@@ -543,9 +548,9 @@ When communicating with the AWS service, the Amazon::DynamoDB code is not handli
 
 I'm hoping to get this fixed.
 
-=head2 How undefs are stored
+=head2 How undefs and empty strings are stored
 
-There's a similar problem with how Amazon::DynamoDB stores undef values:
+There's a similar problem with how Amazon::DynamoDB stores undef values and empty strings:
 
 L<https://github.com/rustyconover/Amazon-DynamoDB/issues/4>
 
