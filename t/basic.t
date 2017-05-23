@@ -1,7 +1,8 @@
 use lib 't/lib';
 use strict;
 use warnings;
-use Test::Most;
+use Test::More;
+use Test::Deep;
 use Test::Warnings;
 
 #
