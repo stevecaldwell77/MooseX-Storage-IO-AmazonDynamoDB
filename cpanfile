@@ -18,6 +18,8 @@ on test => sub {
     requires 'Future';
     requires 'Kavorka';
     requires 'MooseX::ClassAttribute';
+    requires 'Paws';
+    requires 'PawsX::DynamoDB::DocumentClient';
     requires 'Test::DescribeMe';
     requires 'Test::Most';
     requires 'Test::Pod';
