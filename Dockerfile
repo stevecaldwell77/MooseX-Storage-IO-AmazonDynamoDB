@@ -11,14 +11,21 @@ USER $APPUSER
 RUN mkdir $APPDIR
 
 # Install dependencies
-# Note that we explicitly install some before using cpanfile,
-# because they take awhile and we want to cache them.
+
+# This needs to be installed to get Dist::Milla installed (broken dependency
+# chain somewhere).
 USER root
-RUN cpanm Moose
-RUN cpanm IO::Socket::SSL
+RUN cpanm JSON
+
+# Explicitly install these before using cpanfile, because they take awhile and
+# we want to cache them.
+USER root
+RUN cpanm Dist::Milla
 RUN cpanm Amazon::DynamoDB
+
+# Install the rest using cpanfile
+USER root
 ADD cpanfile $APPDIR/
 RUN cpanm --installdeps $APPDIR
 USER $APPUSER
-
 WORKDIR $APPDIR
