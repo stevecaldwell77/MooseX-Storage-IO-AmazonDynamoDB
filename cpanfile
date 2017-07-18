@@ -18,6 +18,7 @@ on test => sub {
     requires 'Future';
     requires 'Kavorka';
     requires 'MooseX::ClassAttribute';
+    requires 'Test::DescribeMe';
     requires 'Test::Most';
     requires 'Test::Pod';
     requires 'Test::Warnings';

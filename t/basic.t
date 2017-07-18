@@ -1,11 +1,13 @@
 use lib 't/lib';
 use strict;
+use warnings;
+
+use Test::DescribeMe qw(author);
 use Test::Most;
 use Test::Warnings;
 
 #
 # This runs a basic set of tests, running against a real DynamoDB server.
-# It will only be run if the RUN_DYNAMODB_TESTS envar is set.
 # BE AWARE THIS WILL COST YOU MONEY EVERY TIME IT RUNS.
 #
 
@@ -29,65 +31,59 @@ my $table_name = 'moosex-storage-io-amazondynamodb-'.time;
     has 'deleted_date' => (is => 'rw', isa => 'Maybe[Str]');
 }
 
-SKIP: {
-    skip 'RUN_DYNAMODB_TESTS envar not set, '
-        . 'skipping tests against real DynamoDB server', 1
-        if !$ENV{RUN_DYNAMODB_TESTS};
+MyDoc->dynamo_db_create_table();
 
-    MyDoc->dynamo_db_create_table();
-
-    my $doc = MyDoc->new(
-        doc_id   => 'foo12',
-        title    => 'Foo',
-        body     => 'blah blah',
-        tags     => [qw(horse yellow angry)],
-        authors  => {
-            jdoe => {
-                name  => 'John Doe',
-                email => 'jdoe@gmail.com',
-                roles => [qw(author reader)],
-            },
-            bsmith => {
-                name  => 'Bob Smith',
-                email => 'bsmith@yahoo.com',
-                roles => [qw(editor reader)],
-            },
+my $doc = MyDoc->new(
+    doc_id   => 'foo12',
+    title    => 'Foo',
+    body     => 'blah blah',
+    tags     => [qw(horse yellow angry)],
+    authors  => {
+        jdoe => {
+            name  => 'John Doe',
+            email => 'jdoe@gmail.com',
+            roles => [qw(author reader)],
         },
-        deleted_date => undef,
-    );
+        bsmith => {
+            name  => 'Bob Smith',
+            email => 'bsmith@yahoo.com',
+            roles => [qw(editor reader)],
+        },
+    },
+    deleted_date => undef,
+);
 
-    $doc->store();
+$doc->store();
 
-    my $doc2 = MyDoc->load('foo12');
+my $doc2 = MyDoc->load('foo12');
 
-    cmp_deeply(
-        $doc2,
-        all(
-            isa('MyDoc'),
-            methods(
-                doc_id   => 'foo12',
-                title    => 'Foo',
-                body     => 'blah blah',
-                tags     => [qw(horse yellow angry)],
-                authors  => {
-                    jdoe => {
-                        name  => 'John Doe',
-                        email => 'jdoe@gmail.com',
-                        roles => [qw(author reader)],
-                    },
-                    bsmith => {
-                        name  => 'Bob Smith',
-                        email => 'bsmith@yahoo.com',
-                        roles => [qw(editor reader)],
-                    },
+cmp_deeply(
+    $doc2,
+    all(
+        isa('MyDoc'),
+        methods(
+            doc_id   => 'foo12',
+            title    => 'Foo',
+            body     => 'blah blah',
+            tags     => [qw(horse yellow angry)],
+            authors  => {
+                jdoe => {
+                    name  => 'John Doe',
+                    email => 'jdoe@gmail.com',
+                    roles => [qw(author reader)],
                 },
-                deleted_date => undef,
-            ),
+                bsmith => {
+                    name  => 'Bob Smith',
+                    email => 'bsmith@yahoo.com',
+                    roles => [qw(editor reader)],
+                },
+            },
+            deleted_date => undef,
         ),
-        'retrieved document looks good',
-    );
+    ),
+    'retrieved document looks good',
+);
 
-    $doc2->dynamo_db_client->delete_table(TableName => $table_name);
-}
+$doc2->dynamo_db_client->delete_table(TableName => $table_name);
 
 done_testing;
