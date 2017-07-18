@@ -9,9 +9,12 @@ use Test::Warnings;
 #
 # This runs a basic set of tests, running against a real DynamoDB server.
 # BE AWARE THIS WILL COST YOU MONEY EVERY TIME IT RUNS.
+# You'll need to create a DynamoDB table with one partition key of 'doc_id',
+# and put its name in the TEST_DYNAMODB_TABLE envar.
 #
 
-my $table_name = 'moosex-storage-io-amazondynamodb-'.time;
+my $table_name = $ENV{TEST_DYNAMODB_TABLE}
+    || die "please set TEST_DYNAMODB_TABLE";
 
 {
     package MyDoc;
@@ -30,8 +33,6 @@ my $table_name = 'moosex-storage-io-amazondynamodb-'.time;
     has 'authors' => (is => 'rw', isa => 'HashRef');
     has 'deleted_date' => (is => 'rw', isa => 'Maybe[Str]');
 }
-
-MyDoc->dynamo_db_create_table();
 
 my $doc = MyDoc->new(
     doc_id   => 'foo12',

@@ -50,11 +50,6 @@ parameter client_args_method => (
     default => 'dynamo_db_client_args',
 );
 
-parameter create_table_method => (
-    isa     => 'Str',
-    default => 'dynamo_db_create_table',
-);
-
 role {
     my $p = shift;
 
@@ -198,28 +193,6 @@ role {
 
         $future->get();
     };
-
-    method $p->create_table_method => sub {
-        my ( $class, %args ) = @_;
-        my $client = delete $args{dynamo_db_client}
-                     || $class->$client_builder_method;
-
-        my $table_name = $class->$table_name_method();
-        my $key_name   = $p->key_attr;
-
-        $client->create_table(
-            TableName            => $table_name,
-            AttributeDefinitions => {
-                $key_name => 'S',
-            },
-            KeySchema            => [$key_name],
-            ReadCapacityUnits    => 2,
-            WriteCapacityUnits   => 2,
-            %args,
-        )->get();
-
-        $client->wait_for_table_status(TableName => $table_name);
-    };
 };
 
 1;
@@ -233,7 +206,15 @@ MooseX::Storage::IO::AmazonDynamoDB - Store and retrieve Moose objects to AWS's 
 
 =head1 SYNOPSIS
 
-First, configure your Moose class via a call to Storage:
+First, create a table in DynamoDB. Currently only single-keyed tables are supported.
+
+  aws dynamodb create-table \
+    --table-name my_docs \
+    --key-schema "AttributeName=doc_id,KeyType=HASH" \
+    --attribute-definitions "AttributeName=doc_id,AttributeType=S" \
+    --provisioned-throughput "ReadCapacityUnits=2,WriteCapacityUnits=2"
+
+Then, configure your Moose class via a call to Storage:
 
   package MyDoc;
   use Moose;
@@ -251,10 +232,6 @@ First, configure your Moose class via a call to Storage:
   has 'authors' => (is => 'rw', isa => 'HashRef');
 
   1;
-
-Then create your table in DynamoDB.  You could also do this directly on AWS.
-
-  MyDoc->dynamo_db_create_table();
 
 Now you can store/load your class to DyanmoDB:
 
@@ -319,8 +296,6 @@ Specifies the name of the DynamoDB table to use for your objects - see the examp
 
 =head2 table_name_method
 
-=head2 create_table_method
-
 =head2 client_builder_method
 
 =head2 client_args_method
@@ -368,14 +343,6 @@ Optional parameters can be specified following the key:
 =item inject - supply additional arguments to the class' new function, or override ones from the resulting data.
 
 =back
-
-=head2 $class->dynamo_db_create_table([, dynamo_db_client => $client ][ ReadCapacityUnits => X, ... ])
-
-Class method.  Wrapper for L<Amazon::DynamoDB>'s create_table method, with the table name and key already setup.
-
-Takes in dynamo_db_client as an optional parameter, all other parameters are passed to Amazon::DynamoDB.
-
-You can change this method's name via the create_table_method parameter.
 
 =head2 dynamo_db_table_name
 
