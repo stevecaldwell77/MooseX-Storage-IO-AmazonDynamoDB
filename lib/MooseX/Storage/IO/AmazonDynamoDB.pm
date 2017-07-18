@@ -50,29 +50,9 @@ parameter client_args_method => (
     default => 'dynamo_db_client_args',
 );
 
-parameter host => (
-    isa     => 'Maybe[Str]',
-    default => undef,
-);
-
-parameter port => (
-    isa     => 'Maybe[Int]',
-    default => undef,
-);
-
-parameter ssl => (
-    isa     => 'Bool',
-    default => undef,
-);
-
 parameter create_table_method => (
     isa     => 'Str',
     default => 'dynamo_db_create_table',
-);
-
-parameter dynamodb_local => (
-    isa     => 'Bool',
-    default => 0,
 );
 
 role {
@@ -104,21 +84,12 @@ role {
 
     method $client_args_method => sub {
         my $region = AWS::CLI::Config::region;
-        my ($host, $port, $ssl);
-        if ($p->dynamodb_local) {
-            $host = 'localhost';
-            $port = 8000;
-            $ssl  = 0;
-        }
-        $host //= $p->host // "dynamodb.$region.amazonaws.com";
-        $port //= $p->port;
-        $ssl  //= $p->ssl // 1;
+        my $host = "dynamodb.$region.amazonaws.com";
         return {
             access_key => AWS::CLI::Config::access_key_id,
             secret_key => AWS::CLI::Config::secret_access_key,
             host       => $host,
-            port       => $port,
-            ssl        => $ssl,
+            ssl        => 1,
         };
     };
 
@@ -342,19 +313,7 @@ There are many parameters you can set when consuming this role that configure it
 
 Specifies the name of the DynamoDB table to use for your objects - see the example in the L<"SYNOPSIS">.  Alternatively, you can return the table name via a class method - see L<"dynamo_db_table_name">.
 
-=head2 dynamodb_local
-
-Use a local DynamoDB server - see L<"DYNAMODB LOCAL">.
-
 =head2 client_class
-
-=head2 host
-
-=head2 port
-
-=head2 ssl
-
-See L<"CLIENT CONFIGURATION">.
 
 =head2 client_attr
 
@@ -464,21 +423,7 @@ B) Pass your own L<Amazon::DynamoDB> client object at every call, e.g.
   $obj->store(dynamo_db_client => $client);
   my $obj2 = MyDoc->load(dynamo_db_client => $client);
 
-C) Set some L<Amazon::DynamoDB> parameters when consuming the role.  The following are available: host, port, ssl.
-
-  package MyDoc;
-  use Moose;
-  use MooseX::Storage;
-
-  with Storage(io => [ 'AmazonDynamoDB' => {
-      table_name => 'my_docs',
-      key_attr   => 'doc_id',
-      host       => $ENV{DYNAMODB_HOST},
-      port       => $ENV{DYNAMODB_PORT},
-      ssl        => $ENV{DYNAMODB_SSL},
-  }]);
-
-D) Override the dynamo_db_client_args method in your class to provide your own parameters to L<Amazon::DynamoDB>'s constructor.  Note that you can also set the client_class parameter when consuming the role if you want to pass these args to a class other than L<Amazon::DynamoDB> - this could be useful in tests.  Objects instantiated using client_class must provide the get_item and put_item methods.
+C) Override the dynamo_db_client_args method in your class to provide your own parameters to L<Amazon::DynamoDB>'s constructor.  Note that you can also set the client_class parameter when consuming the role if you want to pass these args to a class other than L<Amazon::DynamoDB> - this could be useful in tests.  Objects instantiated using client_class must provide the get_item and put_item methods.
 
   package MyDoc;
   use Moose;
@@ -500,7 +445,7 @@ D) Override the dynamo_db_client_args method in your class to provide your own p
       };
   }
 
-E) Override the build_dynamo_db_client method in your class to provide your own client object.  The returned object must provide the get_item and put_item methods.
+D) Override the build_dynamo_db_client method in your class to provide your own client object.  The returned object must provide the get_item and put_item methods.
 
   package MyDoc;
   ...
@@ -510,29 +455,6 @@ E) Override the build_dynamo_db_client method in your class to provide your own 
           %{ My::Config::Class->dynamo_db_config },
       );
   }
-
-=head1 DYNAMODB LOCAL
-
-If you're using this module, you might want to check out L<DynamoDB Local|http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Tools.DynamoDBLocal.html>.  For instance, you might want your development code to hit a local server and your production code to go to Amazon.  This role has a dynamodb_local parameter you can use to make this easier.
-
-  package MyDoc;
-  use Moose;
-  use MooseX::Storage;
-
-  with Storage(io => [ 'AmazonDynamoDB' => {
-      table_name     => 'my_docs',
-      key_attr       => 'doc_id',
-      dynamodb_local => $ENV{DEVELOPMENT} ? 1 : 0,
-  }]);
-
-Having a true value for dynamodb_local is equivalent to:
-
-  with Storage(io => [ 'AmazonDynamoDB' => {
-      ...
-      host       => 'localhost',
-      port       => '8000',
-      ssl        => 0,
-  }]);
 
 =head1 NOTES
 
