@@ -21,6 +21,7 @@ RUN cpanm JSON
 # we want to cache them.
 USER root
 RUN cpanm Dist::Milla
+RUN cpanm Paws
 
 # Install the rest using cpanfile
 USER root
