@@ -1,4 +1,3 @@
-use lib 't/lib';
 use strict;
 use warnings;
 
