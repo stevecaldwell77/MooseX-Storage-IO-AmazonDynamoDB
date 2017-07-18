@@ -21,7 +21,6 @@ RUN cpanm JSON
 # we want to cache them.
 USER root
 RUN cpanm Dist::Milla
-RUN cpanm Amazon::DynamoDB
 
 # Install the rest using cpanfile
 USER root
