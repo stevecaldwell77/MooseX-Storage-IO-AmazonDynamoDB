@@ -1,0 +1,7 @@
+version: '3'
+services:
+  development:
+    build: .
+    volumes:
+      - .:/home/app/MooseX-Storage-IO-AmazonDynamoDB
+    env_file: .env
