@@ -22,3 +22,7 @@ on test => sub {
     requires 'Test::Pod';
     requires 'Test::Warnings';
 };
+
+on develop => sub {
+    requires 'Dist::Milla';
+};
