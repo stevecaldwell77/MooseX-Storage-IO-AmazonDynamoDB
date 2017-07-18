@@ -101,7 +101,7 @@ role {
     };
 
     method store => sub {
-        my ( $self, %args ) = @_;
+        my ( $self ) = @_;
         my $client = $self->$client_attr;
         my $table_name = $self->$table_name_method();
         my $packed = $self->pack;
@@ -189,63 +189,59 @@ MooseX::Storage::IO::AmazonDynamoDB is a Moose role that provides an io layer fo
 
 You should understand the basics of L<Moose>, L<MooseX::Storage>, and L<DynamoDB|http://aws.amazon.com/dynamodb/> before using this module.
 
-This module uses L<Amazon::DynamoDB> as its client library to the DynamoDB service.
-
-By default it grabs authentication credentials using the same procedure as the AWS CLI, see L<AWS::CLI::Config>.  You can customize this behavior - see L<"CLIENT CONFIGURATION">.
+This module uses L<Paws> as its client library to the DynamoDB service, via L<PawsX::DynamoDB::DocumentClient>. By default it uses the Paws configuration defaults (region, credentials, etc.). You can customize this behavior - see L<"CLIENT CONFIGURATION">.
 
 At a bare minimum the consuming class needs to tell this role what table to use and what field to use as a primary key - see L<"table_name"> and L<"key_attr">.
+
+=head2 BREAKING CHANGES IN v0.07
+
+TODO
 
 =head1 PARAMETERS
 
 There are many parameters you can set when consuming this role that configure it in different ways.
 
-=head2 key_attr
+=head2 REQUIRED
+
+=head3 key_attr
 
 "key_attr" is a required parameter when consuming this role.  It specifies an attribute in your class that will provide the primary key value for storing your object to DynamoDB.  Currently only single primary keys are supported, or what DynamoDB calls "Hash Type Primary Key" (see their L<documentation|http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DataModel.html#DataModel.PrimaryKey>).  See the L<"SYNOPSIS"> for an example.
 
-=head2 table_name
+=head2 OPTIONAL
+
+=head3 table_name
 
 Specifies the name of the DynamoDB table to use for your objects - see the example in the L<"SYNOPSIS">.  Alternatively, you can return the table name via a class method - see L<"dynamo_db_table_name">.
 
-=head2 client_class
+=head3 table_name_method
 
-=head2 client_attr
+TODO
 
-=head2 table_name_method
+=head3 document_client_attribute_name
 
-=head2 client_builder_method
+TODO
 
-=head2 client_args_method
+=head3 parameter document_client_builder
 
-Parameters you can use if you want to rename the various attributes and methods that are added to your class by this role.
+TODO
 
 =head1 ATTRIBUTES
 
-Following are attributes that will be added to your consuming class.
+=head2 dynamodb_document_client
 
-=head2 dynamo_db_client
+This role adds an attribute named "dynamodb_document_client" to your consuming class.  This attribute holds an instance of L<PawsX::DynamoDB::DocumentClient> that will be used to communicate with the DynamoDB service.  See L<"CLIENT CONFIGURATION"> for more details.
 
-This role adds an attribute named "dynamo_db_client" to your consuming class.  This attribute holds an instance of Amazon::DynamoDB that will be used to communicate with the DynamoDB service.  See L<"CLIENT CONFIGURATION"> for more details.
-
-You can change this attribute's name via the client_attr parameter.
+You can change this attribute's name via the document_client_attribute_name parameter.
 
 =head1 METHODS
 
 Following are methods that will be added to your consuming class.
 
-=head2 $obj->store([ dynamo_db_client => $client ][, async => 1])
+=head2 $obj->store()
 
-Object method.  Stores the packed Moose object to DynamoDb.  Accepts 2 optional parameters:
+Object method.  Stores the packed Moose object to DynamoDb.
 
-=over 4
-
-=item dynamo_db_client - Directly provide a Amazon::DynamoDB object, instead of using the dynamo_db_client attribute.
-
-=item async - Don't wait for the operation to complete, return a Future object instead.
-
-=back
-
-=head2 $obj = $class->load($key, [, dynamo_db_client => $client ][, inject => { key => val, ... } ])
+=head2 $obj = $class->load($key, [, dynamodb_document_client => $client ][, inject => { key => val, ... } ])
 
 Class method.  Queries DynamoDB with a primary key, and returns a new Moose object built from the resulting data.  Returns undefined if they key could not be found in DyanmoDB.
 
@@ -255,7 +251,7 @@ Optional parameters can be specified following the key:
 
 =over 4
 
-=item dynamo_db_client - Directly provide a Amazon::DynamoDB object, instead of trying to build one using the class' configuration.
+=item dynamodb_document_client - Directly provide a PawsX::DynamoDB::DocumentClient object, instead of trying to build one using the class' configuration.
 
 =item inject - supply additional arguments to the class' new function, or override ones from the resulting data.
 
@@ -282,19 +278,10 @@ A class method that will return the table name to use.  This method will be call
 
 You can change this method's name via the table_name_method parameter.
 
-=head2 $client = $class->build_dynamo_db_client()
-
-See L<"CLIENT CONFIGURATION">.
-
-You can change this method's name via the client_builder_method parameter.
-
-=head2 $args = $class->dynamo_db_client_args()
-
-See L<"CLIENT CONFIGURATION">
-
-You can change this method's name via the client_args_method parameter.
-
 =head1 CLIENT CONFIGURATION
+
+TODO
+
 
 There are a handful ways to configure how this module sets up a client to talk to DynamoDB:
 
@@ -350,23 +337,9 @@ When executing load(), this module will always use strongly consistent reads whe
 
 Note that this role does not need you to implement a 'format' level for your object, i.e freeze/thaw.  You can add one if you want it for other purposes.
 
-=head2 How references are stored
+=head2 Pre-v0.07 objects
 
-When communicating with the AWS service, the Amazon::DynamoDB code is not handling arrayrefs correctly (they can be returned out-of-order) or hashrefs at all.  I've added a simple JSON level when encountering references - it should work seamlessly in your Perl code, but if you look up the data directly in DynamoDB you'll see complex data structures stored as JSON strings.
-
-I'm hoping to get this fixed.
-
-=head2 How undefs and empty strings are stored
-
-There's a similar problem with how Amazon::DynamoDB stores undef values and empty strings:
-
-L<https://github.com/rustyconover/Amazon-DynamoDB/issues/4>
-
-I've worked around this issue the same way for now - via JSON encode/decode.
-
-=head1 BUGS
-
-See L<"How references are stored">, L<"How undefs are stored">
+Before v0.07, this module stored objects to DyanmoDB using L<Amazon::DynamoDB>. It worked around some issues with that module by serializing certain data types to JSON. Objects stored using this old system will be deserialized correctly.
 
 =head1 SEE ALSO
 
@@ -378,9 +351,9 @@ See L<"How references are stored">, L<"How undefs are stored">
 
 =item L<Amazon's DynamoDB Homepage|http://aws.amazon.com/dynamodb/>
 
-=item L<Amazon::DynamoDB> - Perl DynamoDB client.
+=item L<PawsX::DynamoDB::DocumentClient> - DynamoDB client.
 
-=item L<AWS::CLI::Config> - how configuration is done by default.
+=item L<Paws> - AWS library.
 
 =back
 
