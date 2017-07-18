@@ -15,6 +15,7 @@ on test => sub {
     requires 'Test::Most';
     requires 'Test::Pod';
     requires 'Test::Warnings';
+    requires 'UUID::Tiny';
 };
 
 on develop => sub {

@@ -6,6 +6,8 @@ use Test::DescribeMe qw(author);
 use Test::Most;
 use Test::Warnings;
 
+use UUID::Tiny ':std';
+
 #
 # This runs a basic set of tests, running against a real DynamoDB server.
 # BE AWARE THIS WILL COST YOU MONEY EVERY TIME IT RUNS.
@@ -34,8 +36,10 @@ my $table_name = $ENV{TEST_DYNAMODB_TABLE}
     has 'deleted_date' => (is => 'rw', isa => 'Maybe[Str]');
 }
 
+my $doc_id = create_uuid_as_string();
+
 my $doc = MyDoc->new(
-    doc_id   => 'foo12',
+    doc_id   => $doc_id,
     title    => 'Foo',
     body     => 'blah blah',
     tags     => [qw(horse yellow angry)],
@@ -56,14 +60,14 @@ my $doc = MyDoc->new(
 
 $doc->store();
 
-my $doc2 = MyDoc->load('foo12');
+my $doc2 = MyDoc->load($doc_id);
 
 cmp_deeply(
     $doc2,
     all(
         isa('MyDoc'),
         methods(
-            doc_id   => 'foo12',
+            doc_id   => $doc_id,
             title    => 'Foo',
             body     => 'blah blah',
             tags     => [qw(horse yellow angry)],
