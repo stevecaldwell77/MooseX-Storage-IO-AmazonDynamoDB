@@ -4,15 +4,12 @@ use strict;
 use 5.014;
 our $VERSION = '0.06';
 
-use Amazon::DynamoDB;
-use AWS::CLI::Config;
 use Data::Dumper;
 use JSON::MaybeXS;
-use Module::Runtime qw(use_module);
 use MooseX::Role::Parameterized;
 use MooseX::Storage;
-use Types::Standard qw(Str HashRef HasMethods);
-use Throwable::Error;
+use PawsX::DynamoDB::DocumentClient;
+use Types::Standard qw(HasMethods);
 use namespace::autoclean;
 
 parameter key_attr => (
@@ -30,24 +27,14 @@ parameter table_name_method => (
     default => 'dynamo_db_table_name',
 );
 
-parameter client_attr => (
+parameter document_client_attribute_name => (
     isa     => 'Str',
-    default => 'dynamo_db_client',
+    default => 'dynamodb_document_client',
 );
 
-parameter client_builder_method => (
-    isa     => 'Str',
-    default => 'build_dynamo_db_client',
-);
-
-parameter client_class => (
-    isa     => 'Str',
-    default => 'Amazon::DynamoDB',
-);
-
-parameter client_args_method => (
-    isa     => 'Str',
-    default => 'dynamo_db_client_args',
+parameter document_client_builder => (
+    isa     => 'CodeRef',
+    default => sub { sub { PawsX::DynamoDB::DocumentClient->new() } },
 );
 
 role {
@@ -56,37 +43,17 @@ role {
     requires 'pack';
     requires 'unpack';
 
-    my $client_attr           = $p->client_attr;
-    my $client_builder_method = $p->client_builder_method;
-    my $client_args_method    = $p->client_args_method;
-    my $table_name_method     = $p->table_name_method;
-
-    method $client_builder_method => sub {
-        my $class = ref $_[0] || $_[0];
-        my $client_class = $p->client_class;
-        use_module($client_class);
-        my $client_args  = $class->$client_args_method();
-        return $client_class->new(%$client_args);
-    };
+    my $table_name_method = $p->table_name_method;
+    my $client_attr       = $p->document_client_attribute_name;
+    my $client_builder    = $p->document_client_builder;
 
     has $client_attr => (
         is      => 'ro',
-        isa     => HasMethods[qw(get_item put_item)],
+        isa     => HasMethods[qw(get put)],
         lazy    => 1,
         traits  => [ 'DoNotSerialize' ],
-        default => sub { shift->$client_builder_method },
+        default => $client_builder,
     );
-
-    method $client_args_method => sub {
-        my $region = AWS::CLI::Config::region;
-        my $host = "dynamodb.$region.amazonaws.com";
-        return {
-            access_key => AWS::CLI::Config::access_key_id,
-            secret_key => AWS::CLI::Config::secret_access_key,
-            host       => $host,
-            ssl        => 1,
-        };
-    };
 
     method $table_name_method => sub {
         my $class = ref $_[0] || $_[0];
@@ -96,102 +63,52 @@ role {
 
     method load => sub {
         my ( $class, $item_key, %args ) = @_;
-        my $client = $args{dynamo_db_client} || $class->$client_builder_method;
-        my $inject = $args{inject}           || {};
+        my $client = $args{dynamodb_document_client} || $client_builder->();
+        my $inject = $args{inject}                   || {};
         my $table_name = $class->$table_name_method();
 
-        my $unpacker = sub {
-            my $packed = shift;
-
-            return undef unless $packed;
-
-            # Deserialize JSON values
-            foreach my $key (keys %$packed) {
-                my $value = $packed->{$key};
-                if ($value && $value =~ /^\$json\$v(\d+)\$:(.+)$/) {
-                    my ($version, $json) = ($1, $2);
-                    state $coder = JSON::MaybeXS->new(
-                        utf8         => 1,
-                        canonical    => 1,
-                        allow_nonref => 1,
-                    );
-                    $packed->{$key} = $coder->decode($json);
-                }
-            }
-
-            return $class->unpack(
-                $packed,
-                inject => {
-                    %$inject,
-                    $client_attr => $client,
-                }
-            );
-        };
-
-        my $future = $client->get_item(
-            $unpacker,
+        my $packed = $client->get(
             TableName => $table_name,
-            Key       => {
+            Key => {
                 $p->key_attr => $item_key,
             },
-            ConsistentRead => 'true',
+            ConsistentRead => 1,
         );
 
-        return $future->get();
-    };
+        return undef unless $packed;
 
-    method store => sub {
-        my ( $self, %args ) = @_;
-        my $client = $args{dynamo_db_client} || $self->$client_attr;
-        my $async  = $args{async}            || 0;
-        my $table_name = $self->$table_name_method();
-
-        # Store undefs and refs as JSON
-        my $packed = $self->pack;
+        # Deserialize JSON values
         foreach my $key (keys %$packed) {
             my $value = $packed->{$key};
-            my $store_as_json = (
-                (ref $value)
-                || (! defined $value)
-                || (! length($value))
-            );
-            if ($store_as_json) {
+            if ($value && $value =~ /^\$json\$v(\d+)\$:(.+)$/) {
+                my ($version, $json) = ($1, $2);
                 state $coder = JSON::MaybeXS->new(
                     utf8         => 1,
                     canonical    => 1,
                     allow_nonref => 1,
                 );
-                $packed->{$key} = '$json$v1$:'.$coder->encode($value);
+                $packed->{$key} = $coder->decode($json);
             }
         }
 
-        my $future = $client->put_item(
+        return $class->unpack(
+            $packed,
+            inject => {
+                %$inject,
+                $client_attr => $client,
+            }
+        );
+    };
+
+    method store => sub {
+        my ( $self, %args ) = @_;
+        my $client = $self->$client_attr;
+        my $table_name = $self->$table_name_method();
+        my $packed = $self->pack;
+        $client->put(
             TableName => $table_name,
-            Item      => $packed,
-        )->on_fail(sub {
-            my ($e) = @_;
-            my $message = 'An error occurred while executing put_item: ';
-            if (ref $e && ref $e eq 'HASH') {
-                my $submessage = $e->{Message} || $e->{message};
-                if ($submessage) {
-                    $message .= $submessage;
-                    if ($e->{type}) {
-                        $message .= ' (type '.$e->{type}.')';
-                    }
-                } else {
-                    $message .= 'Unknown error: '.Dumper($e);
-                }
-            } else {
-                $message .= "Unknown error: $e";
-            }
-            Throwable::Error->throw($message);
-        });
-
-        if ($async) {
-            return $future;
-        }
-
-        $future->get();
+            Item => $packed,
+        );
     };
 };
 
