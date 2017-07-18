@@ -85,6 +85,4 @@ cmp_deeply(
     'retrieved document looks good',
 );
 
-$doc2->dynamo_db_client->delete_table(TableName => $table_name);
-
 done_testing;
