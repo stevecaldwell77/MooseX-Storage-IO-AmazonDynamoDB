@@ -12,13 +12,13 @@ requires 'namespace::autoclean';
 
 on test => sub {
     requires 'Test::DescribeMe';
-    requires 'Test::Deep';
     requires 'Test::More';
-    requires 'Test::Pod';
-    requires 'Test::Warnings';
-    requires 'UUID::Tiny';
 };
 
 on develop => sub {
     requires 'Dist::Milla';
+    requires 'Test::Pod';
+    requires 'Test::Deep';
+    requires 'UUID::Tiny';
+    requires 'Test::Warnings';
 };
