@@ -195,7 +195,19 @@ At a bare minimum the consuming class needs to tell this role what table to use 
 
 =head2 BREAKING CHANGES IN v0.07
 
-TODO
+v0.07 transitioned the underlying DynamoDB client from L<Amazon::DynamoDB> to L<Paws::Dynamodb>, in order to stay more up-to-date with AWS features. Any existing code which customized the client configuration will break when upgrading to v0.07. Support for creating tables was also dropped.
+
+The following role parameters were removed: client_attr, client_builder_method, client_class, client_args_method, host, port, ssl, dynamodb_local, create_table_method.
+
+The following attibutes were removed: dynamo_db_client
+
+The following methods were removed: build_dynamo_db_client, dynamo_db_client_args, dynamo_db_create_table
+
+The dynamo_db_client parameter to load() was dropped, in favor of dynamodb_document_client.
+
+The dynamo_db_client and async parameters to store() were dropped.
+
+Please see See L<"CLIENT CONFIGURATION"> for details on how to configure your client in v0.07 and above.
 
 =head1 PARAMETERS
 
@@ -215,23 +227,25 @@ Specifies the name of the DynamoDB table to use for your objects - see the examp
 
 =head3 table_name_method
 
-TODO
+By default, this role will add a method named 'dynamo_db_table_name' to your class (see below for method description). If you want to use a different name for this method (e.g., because it conflicts with an existing method), you can change it via this parameter.
 
 =head3 document_client_attribute_name
 
-TODO
+By default, this role adds an attribute to your class named 'dynamodb_document_client' (see below for attribute description). If you want to use a different name for this attribute, you can change it via this parameter.
 
 =head3 parameter document_client_builder
 
-TODO
+Allows customization of the PawsX::DynamoDB::DocumentClient object used to interact with DynamoDB. See L<"CLIENT CONFIGURATION"> for more details.
 
 =head1 ATTRIBUTES
 
 =head2 dynamodb_document_client
 
-This role adds an attribute named "dynamodb_document_client" to your consuming class.  This attribute holds an instance of L<PawsX::DynamoDB::DocumentClient> that will be used to communicate with the DynamoDB service.  See L<"CLIENT CONFIGURATION"> for more details.
+This role adds an attribute named "dynamodb_document_client" to your consuming class.  This attribute holds an instance of L<PawsX::DynamoDB::DocumentClient> that will be used to communicate with the DynamoDB service.
 
 You can change this attribute's name via the document_client_attribute_name parameter.
+
+The attribute is lazily built via document_client_builder. See L<"CLIENT CONFIGURATION"> for more details.
 
 =head1 METHODS
 
@@ -280,52 +294,36 @@ You can change this method's name via the table_name_method parameter.
 
 =head1 CLIENT CONFIGURATION
 
-TODO
+This role uses the 'dynamodb_document_client' attribute (assuming you didn't rename it via 'document_client_attribute_name') to interact with DynamoDB. This attribute is lazily built, and should hold an instance of L<PawsX::DynamoDB::DocumentClient>.
 
+The client is built by a coderef that is stored in the role's document_client_builder parameter. By default, that coderef is simply:
 
-There are a handful ways to configure how this module sets up a client to talk to DynamoDB:
+  sub { return PawsX::DynamoDB::DocumentClient->new(); }
 
-A) Do nothing, in which case an L<Amazon::DynamoDB> object will be automatically created for you using configuration parameters gleaned from L<AWS::CLI::Config>.
-
-B) Pass your own L<Amazon::DynamoDB> client object at every call, e.g.
-
-  my $client = Amazon::DynamoDB(...);
-  my $obj    = MyDoc->new(...);
-  $obj->store(dynamo_db_client => $client);
-  my $obj2 = MyDoc->load(dynamo_db_client => $client);
-
-C) Override the dynamo_db_client_args method in your class to provide your own parameters to L<Amazon::DynamoDB>'s constructor.  Note that you can also set the client_class parameter when consuming the role if you want to pass these args to a class other than L<Amazon::DynamoDB> - this could be useful in tests.  Objects instantiated using client_class must provide the get_item and put_item methods.
+If you need to customize the client, you do so by providing your own builder coderef. For instance, you could set the region directly:
 
   package MyDoc;
   use Moose;
   use MooseX::Storage;
 
   with Storage(io => [ 'AmazonDynamoDB' => {
-      table_name   => 'my_docs',
-      key_attr     => 'doc_id',
-      client_class => $ENV{DEVELOPMENT} ? 'MyTestClass' : 'Amazon::DynamoDB',
+      table_name              => 'my_docs',
+      key_attr                => 'doc_id',
+      document_client_builder => \&_build_document_client,
   }]);
 
-  sub dynamo_db_client_args {
-      my $class = shift;
-      return {
-            access_key => 'my access key',
-            secret_key => 'my secret key',
-            host       => 'dynamodb.us-west-1.amazonaws.com',
-            ssl        => 1,
-      };
+  sub _build_document_client {
+      my $region = get_my_region_somehow();
+      return PawsX::DynamoDB::DocumentClient->new(region => $region);
   }
 
-D) Override the build_dynamo_db_client method in your class to provide your own client object.  The returned object must provide the get_item and put_item methods.
+See L<"DYNAMODB LOCAL"> for an example of configuring our Paws client to run against a locally running dynamodb clone.
 
-  package MyDoc;
-  ...
-  sub build_dynamo_db_client {
-      my $class = shift;
-      return Amazon::DynamoDB->new(
-          %{ My::Config::Class->dynamo_db_config },
-      );
-  }
+Note: the dynamodb_document_client attribute is not typed to a strict isa('PawsX::DynamoDB::DocumentClient'), but instead requires an object that has a 'get' and 'put' method. So you can provide some kind of mocked object, but that is left as an exercise to the reader - although example are welcome!
+
+=head1 DYNAMODB LOCAL
+
+TODO
 
 =head1 NOTES
 
