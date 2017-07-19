@@ -4,28 +4,25 @@ FROM perl:latest
 ENV APPUSER=app
 RUN adduser --system --shell /bin/false --disabled-password --disabled-login $APPUSER
 
-# Setup to use app user, setup work dir
-ENV HOME=/home/$APPUSER
-ENV APPDIR=$HOME/MooseX-Storage-IO-AmazonDynamoDB
-USER $APPUSER
-RUN mkdir $APPDIR
+# Setup work dir
+ENV APPDIR=/opt/app
+RUN install -d -o $APPUSER $APPDIR
 
 # Install dependencies
 
 # This needs to be installed to get Dist::Milla installed (broken dependency
 # chain somewhere).
-USER root
 RUN cpanm JSON
 
 # Explicitly install these before using cpanfile, because they take awhile and
 # we want to cache them.
-USER root
 RUN cpanm Dist::Milla
 RUN cpanm Paws
 
 # Install the rest using cpanfile
-USER root
 ADD cpanfile $APPDIR/
 RUN cpanm --installdeps $APPDIR
+
+# Setup to use appuser going forward
 USER $APPUSER
 WORKDIR $APPDIR

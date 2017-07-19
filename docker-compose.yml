@@ -7,5 +7,5 @@ services:
   development:
     build: .
     volumes:
-      - .:/home/app/MooseX-Storage-IO-AmazonDynamoDB
+      - .:/opt/app
     env_file: .env
