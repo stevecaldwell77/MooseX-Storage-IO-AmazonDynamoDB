@@ -4,7 +4,15 @@ MooseX::Storage::IO::AmazonDynamoDB - Store and retrieve Moose objects to AWS's 
 
 # SYNOPSIS
 
-First, configure your Moose class via a call to Storage:
+First, create a table in DynamoDB. Currently only single-keyed tables are supported.
+
+    aws dynamodb create-table \
+      --table-name my_docs \
+      --key-schema "AttributeName=doc_id,KeyType=HASH" \
+      --attribute-definitions "AttributeName=doc_id,AttributeType=S" \
+      --provisioned-throughput "ReadCapacityUnits=2,WriteCapacityUnits=2"
+
+Then, configure your Moose class via a call to Storage:
 
     package MyDoc;
     use Moose;
@@ -22,10 +30,6 @@ First, configure your Moose class via a call to Storage:
     has 'authors' => (is => 'rw', isa => 'HashRef');
 
     1;
-
-Then create your table in DynamoDB.  You could also do this directly on AWS.
-
-    MyDoc->dynamo_db_create_table();
 
 Now you can store/load your class to DyanmoDB:
 
@@ -66,72 +70,73 @@ MooseX::Storage::IO::AmazonDynamoDB is a Moose role that provides an io layer fo
 
 You should understand the basics of [Moose](https://metacpan.org/pod/Moose), [MooseX::Storage](https://metacpan.org/pod/MooseX::Storage), and [DynamoDB](http://aws.amazon.com/dynamodb/) before using this module.
 
-This module uses [Amazon::DynamoDB](https://metacpan.org/pod/Amazon::DynamoDB) as its client library to the DynamoDB service.
-
-By default it grabs authentication credentials using the same procedure as the AWS CLI, see [AWS::CLI::Config](https://metacpan.org/pod/AWS::CLI::Config).  You can customize this behavior - see ["CLIENT CONFIGURATION"](#client-configuration).
+This module uses [Paws](https://metacpan.org/pod/Paws) as its client library to the DynamoDB service, via [PawsX::DynamoDB::DocumentClient](https://metacpan.org/pod/PawsX::DynamoDB::DocumentClient). By default it uses the Paws configuration defaults (region, credentials, etc.). You can customize this behavior - see ["CLIENT CONFIGURATION"](#client-configuration).
 
 At a bare minimum the consuming class needs to tell this role what table to use and what field to use as a primary key - see ["table\_name"](#table_name) and ["key\_attr"](#key_attr).
+
+## BREAKING CHANGES IN v0.07
+
+v0.07 transitioned the underlying DynamoDB client from [Amazon::DynamoDB](https://metacpan.org/pod/Amazon::DynamoDB) to [Paws::Dynamodb](https://metacpan.org/pod/Paws::Dynamodb), in order to stay more up-to-date with AWS features. Any existing code which customized the client configuration will break when upgrading to v0.07. Support for creating tables was also dropped.
+
+The following role parameters were removed: client\_attr, client\_builder\_method, client\_class, client\_args\_method, host, port, ssl, dynamodb\_local, create\_table\_method.
+
+The following attibutes were removed: dynamo\_db\_client
+
+The following methods were removed: build\_dynamo\_db\_client, dynamo\_db\_client\_args, dynamo\_db\_create\_table
+
+The dynamo\_db\_client parameter to load() was dropped, in favor of dynamodb\_document\_client.
+
+The dynamo\_db\_client and async parameters to store() were dropped.
+
+Please see See ["CLIENT CONFIGURATION"](#client-configuration) for details on how to configure your client in v0.07 and above.
 
 # PARAMETERS
 
 There are many parameters you can set when consuming this role that configure it in different ways.
 
-## key\_attr
+## REQUIRED
+
+### key\_attr
 
 "key\_attr" is a required parameter when consuming this role.  It specifies an attribute in your class that will provide the primary key value for storing your object to DynamoDB.  Currently only single primary keys are supported, or what DynamoDB calls "Hash Type Primary Key" (see their [documentation](http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DataModel.html#DataModel.PrimaryKey)).  See the ["SYNOPSIS"](#synopsis) for an example.
 
-## table\_name
+## OPTIONAL
+
+### table\_name
 
 Specifies the name of the DynamoDB table to use for your objects - see the example in the ["SYNOPSIS"](#synopsis).  Alternatively, you can return the table name via a class method - see ["dynamo\_db\_table\_name"](#dynamo_db_table_name).
 
-## dynamodb\_local
+### table\_name\_method
 
-Use a local DynamoDB server - see ["DYNAMODB LOCAL"](#dynamodb-local).
+By default, this role will add a method named 'dynamo\_db\_table\_name' to your class (see below for method description). If you want to use a different name for this method (e.g., because it conflicts with an existing method), you can change it via this parameter.
 
-## client\_class
+### document\_client\_attribute\_name
 
-## host
+By default, this role adds an attribute to your class named 'dynamodb\_document\_client' (see below for attribute description). If you want to use a different name for this attribute, you can change it via this parameter.
 
-## port
+### parameter document\_client\_builder
 
-## ssl
-
-See ["CLIENT CONFIGURATION"](#client-configuration).
-
-## client\_attr
-
-## table\_name\_method
-
-## create\_table\_method
-
-## client\_builder\_method
-
-## client\_args\_method
-
-Parameters you can use if you want to rename the various attributes and methods that are added to your class by this role.
+Allows customization of the PawsX::DynamoDB::DocumentClient object used to interact with DynamoDB. See ["CLIENT CONFIGURATION"](#client-configuration) for more details.
 
 # ATTRIBUTES
 
-Following are attributes that will be added to your consuming class.
+## dynamodb\_document\_client
 
-## dynamo\_db\_client
+This role adds an attribute named "dynamodb\_document\_client" to your consuming class.  This attribute holds an instance of [PawsX::DynamoDB::DocumentClient](https://metacpan.org/pod/PawsX::DynamoDB::DocumentClient) that will be used to communicate with the DynamoDB service.
 
-This role adds an attribute named "dynamo\_db\_client" to your consuming class.  This attribute holds an instance of Amazon::DynamoDB that will be used to communicate with the DynamoDB service.  See ["CLIENT CONFIGURATION"](#client-configuration) for more details.
+You can change this attribute's name via the document\_client\_attribute\_name parameter.
 
-You can change this attribute's name via the client\_attr parameter.
+The attribute is lazily built via document\_client\_builder. See ["CLIENT CONFIGURATION"](#client-configuration) for more details.
 
 # METHODS
 
 Following are methods that will be added to your consuming class.
 
-## $obj->store(\[ dynamo\_db\_client => $client \]\[, async => 1\])
+## $obj->store()
 
-Object method.  Stores the packed Moose object to DynamoDb.  Accepts 2 optional parameters:
+Object method.  Stores the packed Moose object to DynamoDb.
 
-- dynamo\_db\_client - Directly provide a Amazon::DynamoDB object, instead of using the dynamo\_db\_client attribute.
-- async - Don't wait for the operation to complete, return a Future object instead.
-
-## $obj = $class->load($key, \[, dynamo\_db\_client => $client \]\[, inject => { key => val, ... } \])
+## $obj = $class->load($key, \[, dynamodb\_document\_client => $client \]\[, inject => { key => val, ... } \])
 
 Class method.  Queries DynamoDB with a primary key, and returns a new Moose object built from the resulting data.  Returns undefined if they key could not be found in DyanmoDB.
 
@@ -139,16 +144,8 @@ The first argument is the primary key to use, and is required.
 
 Optional parameters can be specified following the key:
 
-- dynamo\_db\_client - Directly provide a Amazon::DynamoDB object, instead of trying to build one using the class' configuration.
+- dynamodb\_document\_client - Directly provide a PawsX::DynamoDB::DocumentClient object, instead of trying to build one using the class' configuration.
 - inject - supply additional arguments to the class' new function, or override ones from the resulting data.
-
-## $class->dynamo\_db\_create\_table(\[, dynamo\_db\_client => $client \]\[ ReadCapacityUnits => X, ... \])
-
-Class method.  Wrapper for [Amazon::DynamoDB](https://metacpan.org/pod/Amazon::DynamoDB)'s create\_table method, with the table name and key already setup.
-
-Takes in dynamo\_db\_client as an optional parameter, all other parameters are passed to Amazon::DynamoDB.
-
-You can change this method's name via the create\_table\_method parameter.
 
 ## dynamo\_db\_table\_name
 
@@ -171,100 +168,69 @@ A class method that will return the table name to use.  This method will be call
 
 You can change this method's name via the table\_name\_method parameter.
 
-## $client = $class->build\_dynamo\_db\_client()
-
-See ["CLIENT CONFIGURATION"](#client-configuration).
-
-You can change this method's name via the client\_builder\_method parameter.
-
-## $args = $class->dynamo\_db\_client\_args()
-
-See ["CLIENT CONFIGURATION"](#client-configuration)
-
-You can change this method's name via the client\_args\_method parameter.
-
 # CLIENT CONFIGURATION
 
-There are a handful ways to configure how this module sets up a client to talk to DynamoDB:
+This role uses the 'dynamodb\_document\_client' attribute (assuming you didn't rename it via 'document\_client\_attribute\_name') to interact with DynamoDB. This attribute is lazily built, and should hold an instance of [PawsX::DynamoDB::DocumentClient](https://metacpan.org/pod/PawsX::DynamoDB::DocumentClient).
 
-A) Do nothing, in which case an [Amazon::DynamoDB](https://metacpan.org/pod/Amazon::DynamoDB) object will be automatically created for you using configuration parameters gleaned from [AWS::CLI::Config](https://metacpan.org/pod/AWS::CLI::Config).
+The client is built by a coderef that is stored in the role's document\_client\_builder parameter. By default, that coderef is simply:
 
-B) Pass your own [Amazon::DynamoDB](https://metacpan.org/pod/Amazon::DynamoDB) client object at every call, e.g.
+    sub { return PawsX::DynamoDB::DocumentClient->new(); }
 
-    my $client = Amazon::DynamoDB(...);
-    my $obj    = MyDoc->new(...);
-    $obj->store(dynamo_db_client => $client);
-    my $obj2 = MyDoc->load(dynamo_db_client => $client);
-
-C) Set some [Amazon::DynamoDB](https://metacpan.org/pod/Amazon::DynamoDB) parameters when consuming the role.  The following are available: host, port, ssl.
+If you need to customize the client, you do so by providing your own builder coderef. For instance, you could set the region directly:
 
     package MyDoc;
     use Moose;
     use MooseX::Storage;
+    use PawsX::DynamoDB::DocumentClient;
 
     with Storage(io => [ 'AmazonDynamoDB' => {
-        table_name => 'my_docs',
-        key_attr   => 'doc_id',
-        host       => $ENV{DYNAMODB_HOST},
-        port       => $ENV{DYNAMODB_PORT},
-        ssl        => $ENV{DYNAMODB_SSL},
+        table_name              => 'my_docs',
+        key_attr                => 'doc_id',
+        document_client_builder => \&_build_document_client,
     }]);
 
-D) Override the dynamo\_db\_client\_args method in your class to provide your own parameters to [Amazon::DynamoDB](https://metacpan.org/pod/Amazon::DynamoDB)'s constructor.  Note that you can also set the client\_class parameter when consuming the role if you want to pass these args to a class other than [Amazon::DynamoDB](https://metacpan.org/pod/Amazon::DynamoDB) - this could be useful in tests.  Objects instantiated using client\_class must provide the get\_item and put\_item methods.
-
-    package MyDoc;
-    use Moose;
-    use MooseX::Storage;
-
-    with Storage(io => [ 'AmazonDynamoDB' => {
-        table_name   => 'my_docs',
-        key_attr     => 'doc_id',
-        client_class => $ENV{DEVELOPMENT} ? 'MyTestClass' : 'Amazon::DynamoDB',
-    }]);
-
-    sub dynamo_db_client_args {
-        my $class = shift;
-        return {
-              access_key => 'my access key',
-              secret_key => 'my secret key',
-              host       => 'dynamodb.us-west-1.amazonaws.com',
-              ssl        => 1,
-        };
+    sub _build_document_client {
+        my $region = get_my_region_somehow();
+        return PawsX::DynamoDB::DocumentClient->new(region => $region);
     }
 
-E) Override the build\_dynamo\_db\_client method in your class to provide your own client object.  The returned object must provide the get\_item and put\_item methods.
+See ["DYNAMODB LOCAL"](#dynamodb-local) for an example of configuring our Paws client to run against a locally running dynamodb clone.
 
-    package MyDoc;
-    ...
-    sub build_dynamo_db_client {
-        my $class = shift;
-        return Amazon::DynamoDB->new(
-            %{ My::Config::Class->dynamo_db_config },
-        );
-    }
+Note: the dynamodb\_document\_client attribute is not typed to a strict isa('PawsX::DynamoDB::DocumentClient'), but instead requires an object that has a 'get' and 'put' method. So you can provide some kind of mocked object, but that is left as an exercise to the reader - although example are welcome!
 
 # DYNAMODB LOCAL
 
-If you're using this module, you might want to check out [DynamoDB Local](http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Tools.DynamoDBLocal.html).  For instance, you might want your development code to hit a local server and your production code to go to Amazon.  This role has a dynamodb\_local parameter you can use to make this easier.
+Here's an example of configuring your client to run against DynamoDB Local based on an environment variable. Make sure you've read ["CLIENT CONFIGURATION"](#client-configuration). More information about DynamoDB Local can be found at [AWS](http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html).
 
     package MyDoc;
     use Moose;
     use MooseX::Storage;
+    use Paws;
+    use Paws::Credential::Explicit;
+    use PawsX::DynamoDB::DocumentClient;
 
     with Storage(io => [ 'AmazonDynamoDB' => {
-        table_name     => 'my_docs',
-        key_attr       => 'doc_id',
-        dynamodb_local => $ENV{DEVELOPMENT} ? 1 : 0,
+        table_name              => $table_name,
+        key_attr                => 'doc_id',
+        document_client_builder => \&_build_document_client,
     }]);
 
-Having a true value for dynamodb\_local is equivalent to:
-
-    with Storage(io => [ 'AmazonDynamoDB' => {
-        ...
-        host       => 'localhost',
-        port       => '8000',
-        ssl        => 0,
-    }]);
+    sub _build_document_client {
+        if ($ENV{DYNAMODB_LOCAL}) {
+            my $dynamodb = Paws->service(
+                'DynamoDB',
+                region       => 'us-east-1',
+                region_rules => [ { uri => 'http://localhost:8000'} ],
+                credentials  => Paws::Credential::Explicit->new(
+                    access_key => 'XXXXXXXXX',
+                    secret_key => 'YYYYYYYYY',
+                ),
+                max_attempts => 2,
+            );
+            return PawsX::DynamoDB::DocumentClient->new(dynamodb => $dynamodb);
+        }
+        return PawsX::DynamoDB::DocumentClient->new();
+    }
 
 # NOTES
 
@@ -276,31 +242,17 @@ When executing load(), this module will always use strongly consistent reads whe
 
 Note that this role does not need you to implement a 'format' level for your object, i.e freeze/thaw.  You can add one if you want it for other purposes.
 
-## How references are stored
+## Pre-v0.07 objects
 
-When communicating with the AWS service, the Amazon::DynamoDB code is not handling arrayrefs correctly (they can be returned out-of-order) or hashrefs at all.  I've added a simple JSON level when encountering references - it should work seamlessly in your Perl code, but if you look up the data directly in DynamoDB you'll see complex data structures stored as JSON strings.
-
-I'm hoping to get this fixed.
-
-## How undefs and empty strings are stored
-
-There's a similar problem with how Amazon::DynamoDB stores undef values and empty strings:
-
-[https://github.com/rustyconover/Amazon-DynamoDB/issues/4](https://github.com/rustyconover/Amazon-DynamoDB/issues/4)
-
-I've worked around this issue the same way for now - via JSON encode/decode.
-
-# BUGS
-
-See ["How references are stored"](#how-references-are-stored), ["How undefs are stored"](#how-undefs-are-stored)
+Before v0.07, this module stored objects to DyanmoDB using [Amazon::DynamoDB](https://metacpan.org/pod/Amazon::DynamoDB). It worked around some issues with that module by serializing certain data types to JSON. Objects stored using this old system will be deserialized correctly.
 
 # SEE ALSO
 
 - [Moose](https://metacpan.org/pod/Moose)
 - [MooseX::Storage](https://metacpan.org/pod/MooseX::Storage)
 - [Amazon's DynamoDB Homepage](http://aws.amazon.com/dynamodb/)
-- [Amazon::DynamoDB](https://metacpan.org/pod/Amazon::DynamoDB) - Perl DynamoDB client.
-- [AWS::CLI::Config](https://metacpan.org/pod/AWS::CLI::Config) - how configuration is done by default.
+- [PawsX::DynamoDB::DocumentClient](https://metacpan.org/pod/PawsX::DynamoDB::DocumentClient) - DynamoDB client.
+- [Paws](https://metacpan.org/pod/Paws) - AWS library.
 
 # AUTHOR
 
