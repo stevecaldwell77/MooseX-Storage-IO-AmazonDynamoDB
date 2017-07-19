@@ -305,6 +305,7 @@ If you need to customize the client, you do so by providing your own builder cod
   package MyDoc;
   use Moose;
   use MooseX::Storage;
+  use PawsX::DynamoDB::DocumentClient;
 
   with Storage(io => [ 'AmazonDynamoDB' => {
       table_name              => 'my_docs',
@@ -323,7 +324,37 @@ Note: the dynamodb_document_client attribute is not typed to a strict isa('PawsX
 
 =head1 DYNAMODB LOCAL
 
-TODO
+Here's an example of configuring your client to run against DynamoDB Local based on an environment variable. Make sure you've read L<CLIENT CONFIGURATION>. More information about DynamoDB Local can be found at L<AWS|http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html>.
+
+  package MyDoc;
+  use Moose;
+  use MooseX::Storage;
+  use Paws;
+  use Paws::Credential::Explicit;
+  use PawsX::DynamoDB::DocumentClient;
+
+  with Storage(io => [ 'AmazonDynamoDB' => {
+      table_name              => $table_name,
+      key_attr                => 'doc_id',
+      document_client_builder => \&_build_document_client,
+  }]);
+
+  sub _build_document_client {
+      if ($ENV{DYNAMODB_LOCAL}) {
+          my $dynamodb = Paws->service(
+              'DynamoDB',
+              region       => 'us-east-1',
+              region_rules => [ { uri => 'http://localhost:8000'} ],
+              credentials  => Paws::Credential::Explicit->new(
+                  access_key => 'XXXXXXXXX',
+                  secret_key => 'YYYYYYYYY',
+              ),
+              max_attempts => 2,
+          );
+          return PawsX::DynamoDB::DocumentClient->new(dynamodb => $dynamodb);
+      }
+      return PawsX::DynamoDB::DocumentClient->new();
+  }
 
 =head1 NOTES
 

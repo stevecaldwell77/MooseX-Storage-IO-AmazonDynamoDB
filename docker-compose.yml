@@ -1,5 +1,9 @@
 version: '3'
 services:
+  dynamodb:
+    image: peopleperhour/dynamodb
+    ports:
+     - "8100:8000"
   development:
     build: .
     volumes:
