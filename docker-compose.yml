@@ -8,4 +8,6 @@ services:
     build: .
     volumes:
       - .:/opt/MooseX-Storage-IO-AmazonDynamoDB
+      - $HOME/.gitconfig:/home/app/.gitconfig
+      - $HOME/.ssh/id_rsa:/home/app/.ssh/id_rsa
     env_file: .env
