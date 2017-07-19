@@ -12,7 +12,8 @@ requires 'namespace::autoclean';
 
 on test => sub {
     requires 'Test::DescribeMe';
-    requires 'Test::Most';
+    requires 'Test::Deep';
+    requires 'Test::More';
     requires 'Test::Pod';
     requires 'Test::Warnings';
     requires 'UUID::Tiny';

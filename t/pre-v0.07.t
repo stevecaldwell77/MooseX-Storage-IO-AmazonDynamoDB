@@ -2,7 +2,8 @@ use strict;
 use warnings;
 
 use Test::DescribeMe qw(author);
-use Test::Most;
+use Test::More;
+use Test::Deep;
 use Test::Warnings;
 
 use PawsX::DynamoDB::DocumentClient;
