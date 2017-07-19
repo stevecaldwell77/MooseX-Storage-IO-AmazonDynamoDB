@@ -76,7 +76,7 @@ At a bare minimum the consuming class needs to tell this role what table to use 
 
 ## BREAKING CHANGES IN v0.07
 
-v0.07 transitioned the underlying DynamoDB client from [Amazon::DynamoDB](https://metacpan.org/pod/Amazon::DynamoDB) to [Paws::Dynamodb](https://metacpan.org/pod/Paws::Dynamodb), in order to stay more up-to-date with AWS features. Any existing code which customized the client configuration will break when upgrading to v0.07. Support for creating tables was also dropped.
+v0.07 transitioned the underlying DynamoDB client from [Amazon::DynamoDB](https://metacpan.org/pod/Amazon::DynamoDB) to [Paws::Dynamodb](https://metacpan.org/pod/Paws::Dynamodb), in order to stay more up-to-date with AWS features. Any existing code which customized the client configuration will break when upgrading to v0.07. Support for creating tables was also removed.
 
 The following role parameters were removed: client\_attr, client\_builder\_method, client\_class, client\_args\_method, host, port, ssl, dynamodb\_local, create\_table\_method.
 
@@ -84,9 +84,9 @@ The following attibutes were removed: dynamo\_db\_client
 
 The following methods were removed: build\_dynamo\_db\_client, dynamo\_db\_client\_args, dynamo\_db\_create\_table
 
-The dynamo\_db\_client parameter to load() was dropped, in favor of dynamodb\_document\_client.
+The dynamo\_db\_client parameter to load() was removed, in favor of dynamodb\_document\_client.
 
-The dynamo\_db\_client and async parameters to store() were dropped.
+The dynamo\_db\_client and async parameters to store() were removed.
 
 Please see See ["CLIENT CONFIGURATION"](#client-configuration) for details on how to configure your client in v0.07 and above.
 
@@ -196,7 +196,7 @@ If you need to customize the client, you do so by providing your own builder cod
 
 See ["DYNAMODB LOCAL"](#dynamodb-local) for an example of configuring our Paws client to run against a locally running dynamodb clone.
 
-Note: the dynamodb\_document\_client attribute is not typed to a strict isa('PawsX::DynamoDB::DocumentClient'), but instead requires an object that has a 'get' and 'put' method. So you can provide some kind of mocked object, but that is left as an exercise to the reader - although example are welcome!
+Note: the dynamodb\_document\_client attribute is not typed to a strict isa('PawsX::DynamoDB::DocumentClient'), but instead requires an object that has a 'get' and 'put' method. So you can provide some kind of mocked object, but that is left as an exercise to the reader - although examples are welcome!
 
 # DYNAMODB LOCAL
 
