@@ -1,6 +1,8 @@
 Revision history for MooseX-Storage-IO-AmazonDynamoDB
 
 {{$NEXT}}
+
+0.08  2017-07-24 19:57:48 UTC
         - added force_type parameter.
 
 0.07  2017-07-19 20:12:23 UTC

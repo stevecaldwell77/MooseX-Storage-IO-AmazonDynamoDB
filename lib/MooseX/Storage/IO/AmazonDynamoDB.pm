@@ -2,7 +2,7 @@ package MooseX::Storage::IO::AmazonDynamoDB;
 
 use strict;
 use 5.014;
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
 use Data::Dumper;
 use JSON::MaybeXS;
