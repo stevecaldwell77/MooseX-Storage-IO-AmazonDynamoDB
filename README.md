@@ -21,6 +21,7 @@ Then, configure your Moose class via a call to Storage:
     with Storage(io => [ 'AmazonDynamoDB' => {
         table_name => 'my_docs',
         key_attr   => 'doc_id',
+        force_type => { doc_id => 'S' },
     }]);
 
     has 'doc_id'  => (is => 'ro', isa => 'Str', required => 1);
@@ -109,6 +110,12 @@ Specifies the name of the DynamoDB table to use for your objects - see the examp
 ### table\_name\_method
 
 By default, this role will add a method named 'dynamo\_db\_table\_name' to your class (see below for method description). If you want to use a different name for this method (e.g., because it conflicts with an existing method), you can change it via this parameter.
+
+### force\_type
+
+Gets passed to [Net::Amazon::DynamoDB::Marshaler](https://metacpan.org/pod/Net::Amazon::DynamoDB::Marshaler) when converting our packed data to DynamoDB format.
+
+It is highly recommended that you set the types for any attributes that are part of a key (either key\_attr, or an attribute that's part of an index). Read up on force\_type in [Net::Amazon::DynamoDB::Marshaler](https://metacpan.org/pod/Net::Amazon::DynamoDB::Marshaler) for more details.
 
 ### document\_client\_attribute\_name
 
